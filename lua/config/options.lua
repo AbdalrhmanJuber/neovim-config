@@ -48,3 +48,16 @@ vim.defer_fn(function()
 end, 200)
 
 -- NOTE: Colorscheme is now set in the catppuccin plugin configuration
+-- Add to your existing options.lua
+-- Force treesitter highlighting to work
+vim.opt.termguicolors = true
+vim.cmd("syntax enable")
+vim.cmd("filetype plugin indent on")
+
+-- Ensure treesitter highlighting takes priority
+vim.defer_fn(function()
+	-- Re-enable treesitter highlighting after colorscheme loads
+	if vim.fn.exists(":TSEnable") > 0 then
+		vim.cmd("TSEnable highlight")
+	end
+end, 500)

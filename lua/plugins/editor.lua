@@ -1,46 +1,36 @@
--- Editor enhancement plugins (No treesitter - Windows reliable setup)
+-- Editor enhancement plugins (WITH treesitter working on Windows)
 return {
-	-- Autopairs
+	-- Autopairs with treesitter integration
 	{
 		"windwp/nvim-autopairs",
 		event = "InsertEnter",
 		config = function()
 			require("nvim-autopairs").setup({
-				check_ts = false, -- Disable treesitter integration
-				ts = false, -- Disable treesitter completely for autopairs
+				check_ts = true, -- Enable treesitter integration
+				ts = true, -- Use treesitter
 			})
+			
+			-- Integrate with nvim-cmp if available
+			local cmp_autopairs = require("nvim-autopairs.completion.cmp")
+			local cmp = require("cmp")
+			cmp.event:on("confirm_done", cmp_autopairs.on_confirm_done())
 		end,
 	},
 
-	-- COMPLETELY DISABLE treesitter to avoid all Windows issues
-	{
-		"nvim-treesitter/nvim-treesitter",
-		enabled = false,
-	},
-	{
-		"windwp/nvim-ts-autotag", 
-		enabled = false,
-	},
-
-	-- Use vim-polyglot for comprehensive syntax highlighting
+	-- Keep vim-polyglot as fallback for languages treesitter doesn't support
 	{
 		"sheerun/vim-polyglot",
 		event = { "BufReadPost", "BufNewFile" },
 		init = function()
-			-- Enable all languages - polyglot is very reliable
-			vim.g.polyglot_disabled = {}
-		end,
-		config = function()
-			-- Enhanced HTML/CSS/JS highlighting
-			vim.g.html_indent_script1 = "inc"
-			vim.g.html_indent_style1 = "inc"
-			vim.g.css_indent_script = 1
-			vim.g.javascript_plugin_jsdoc = 1
-			vim.g.typescript_plugin_jsdoc = 1
+			-- Disable for languages that treesitter handles well
+			vim.g.polyglot_disabled = { 
+				"lua", "html", "css", "javascript", "typescript", 
+				"json", "yaml", "markdown", "c", "vim" 
+			}
 		end,
 	},
 
-	-- Reliable auto-closing tags for HTML/JSX
+	-- Keep vim-closetag as backup for treesitter auto-tag
 	{
 		"alvan/vim-closetag",
 		ft = { "html", "xml", "javascript", "typescript", "javascriptreact", "typescriptreact", "vue", "svelte" },
@@ -61,38 +51,48 @@ return {
 		end,
 	},
 
-	-- Enhanced matching with matchup (better than built-in matchparen)
+	-- Enhanced matching with treesitter support
 	{
 		"andymass/vim-matchup",
 		event = { "BufReadPost", "BufNewFile" },
 		config = function()
 			vim.g.matchup_matchparen_offscreen = { method = "popup" }
 			vim.g.matchup_surround_enabled = 1
+			-- Integrate with treesitter
+			vim.g.matchup_treesitter_enabled = 1
 		end,
 	},
 
-	-- Rainbow parentheses (works without treesitter) - FIXED SYNTAX
+	-- Treesitter-based rainbow delimiters
 	{
-		"frazrepo/vim-rainbow",
+		"HiPhish/rainbow-delimiters.nvim",
 		event = { "BufReadPost", "BufNewFile" },
+		dependencies = { "nvim-treesitter/nvim-treesitter" },
 		config = function()
-			vim.g.rainbow_active = 1
-			vim.g.rainbow_conf = {
-				guifgs = { "#f38ba8", "#a6e3a1", "#89b4fa", "#f9e2af", "#cba6f7" },
-				ctermfgs = { "lightblue", "lightyellow", "lightcyan", "lightmagenta" },
-				guis = { "" },
-				cterms = { "" },
-				operators = "_,_",
-				parentheses = { "start=/(/ end=/)/ fold", "start=/\\[/ end=/\\]/ fold", "start=/{/ end=/}/ fold" },
-				separately = {
-					["*"] = {},
-					["markdown"] = { parentheses_options = "containedin=markdownCode contained" }, -- FIXED: = instead of :
-				}
+			local rainbow_delimiters = require("rainbow-delimiters")
+			vim.g.rainbow_delimiters = {
+				strategy = {
+					[""] = rainbow_delimiters.strategy["global"],
+					vim = rainbow_delimiters.strategy["local"],
+				},
+				query = {
+					[""] = "rainbow-delimiters",
+					lua = "rainbow-blocks",
+				},
+				highlight = {
+					"RainbowDelimiterRed",
+					"RainbowDelimiterYellow",
+					"RainbowDelimiterBlue",
+					"RainbowDelimiterOrange",
+					"RainbowDelimiterGreen",
+					"RainbowDelimiterViolet",
+					"RainbowDelimiterCyan",
+				},
 			}
 		end,
 	},
 
-	-- Indentation guides (works great without treesitter)
+	-- Rest of your editor plugins...
 	{
 		"lukas-reineke/indent-blankline.nvim",
 		event = { "BufReadPost", "BufNewFile" },
@@ -103,27 +103,22 @@ return {
 					char = "│",
 					tab_char = "│",
 				},
-				scope = { enabled = false },
+				scope = { 
+					enabled = true, -- Enable scope highlighting with treesitter
+					show_start = true,
+					show_end = true,
+				},
 				exclude = {
 					filetypes = {
-						"help",
-						"alpha",
-						"dashboard",
-						"neo-tree",
-						"Trouble",
-						"trouble",
-						"lazy",
-						"mason",
-						"notify",
-						"toggleterm",
-						"lazyterm",
+						"help", "alpha", "dashboard", "neo-tree", "Trouble",
+						"trouble", "lazy", "mason", "notify", "toggleterm", "lazyterm",
 					},
 				},
 			})
 		end,
 	},
 
-	-- Smooth scrolling
+	-- Your other plugins remain the same...
 	{
 		"karb94/neoscroll.nvim",
 		event = "WinScrolled",
@@ -136,7 +131,6 @@ return {
 		end,
 	},
 
-	-- Last place
 	{
 		"ethanholz/nvim-lastplace",
 		event = "BufReadPost",
@@ -149,7 +143,6 @@ return {
 		end,
 	},
 
-	-- Auto-save
 	{
 		"Pocco81/auto-save.nvim",
 		event = { "InsertLeave", "TextChanged" },
@@ -177,7 +170,6 @@ return {
 		end,
 	},
 
-	-- Enhanced comment functionality
 	{
 		"numToStr/Comment.nvim",
 		event = { "BufReadPost", "BufNewFile" },
