@@ -32,3 +32,25 @@ end)
 vim.keymap.set("n", "<leader>ks", function()
 	os.execute("taskkill /IM node.exe /F")
 end, { desc = "Kill all Node.js processes (e.g., live-server)" })
+
+-- Additional LSP keybindings for better access
+vim.keymap.set("n", "<leader>lh", function()
+	-- Show LSP help/status
+	vim.notify([[
+LSP Keybindings:
+  gd - Go to definition
+  gD - Go to declaration  
+  K - Show hover info
+  gi - Go to implementation
+  <C-k> - Show signature help
+  <leader>rn - Rename symbol
+  <leader>ca - Code actions
+  gr - Show references
+  <leader>f - Format buffer
+  <leader>ls - Show LSP status
+  <leader>lr - Restart LSP for buffer
+  <leader>lR - Restart all LSP servers
+  <leader>li - Show LspInfo
+  <leader>lI - Show Mason
+]], vim.log.levels.INFO)
+end, { desc = "Show LSP help" })
