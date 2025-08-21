@@ -36,7 +36,10 @@ return {
 				auto_install = false,
 				
 				-- Keep problematic parsers empty to allow JS/TS/HTML
-				ignore_install = { 
+				ignore_install = {
+					"javascript", -- Uncomment if you want to disable JS
+					"typescript", -- Uncomment if you want to disable TS
+					"html", -- Uncomment if you want to disable HTML 
 				},
 
 				highlight = {
