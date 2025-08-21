@@ -1,4 +1,4 @@
--- Windows-safe treesitter configuration
+-- Windows-safe treesitter configuration with JS/TS/HTML enabled
 return {
 	{
 		"nvim-treesitter/nvim-treesitter",
@@ -10,7 +10,7 @@ return {
 			require("nvim-treesitter.install").compilers = { "gcc", "clang", "cc" }
 			
 			require("nvim-treesitter.configs").setup({
-				-- Only install parsers that work reliably on Windows
+				-- Install parsers including web languages
 				ensure_installed = {
 					"lua",
 					"vim",
@@ -19,36 +19,54 @@ return {
 					"json",
 					"yaml",
 					"markdown",
+					"javascript",
+					"typescript",
+					"python",
+					"bash",
+					"html",
+					"css",
+					"c",
+					"cpp",
+					"java",
+					-- Additional web-related parsers
+					"tsx",
 				},
 
 				sync_install = false,
 				auto_install = false,
 				
-				-- Completely ignore problematic parsers
+				-- Keep problematic parsers empty to allow JS/TS/HTML
 				ignore_install = { 
-					"html", "css", "javascript", "typescript", 
-					"tsx", "jsx", "cpp", "c" 
 				},
 
 				highlight = {
 					enable = true,
 					additional_vim_regex_highlighting = { "markdown" },
 					
-					-- Disable highlighting for web languages entirely
-					disable = { 
-						"html", "css", "javascript", "typescript", 
-						"javascriptreact", "typescriptreact",
-						"tsx", "jsx", "cpp", "c"
-					},
+					-- Enable highlighting for web languages
+					-- Remove any disable configuration for JS/TS/HTML
 				},
 
 				indent = {
 					enable = true,
-					-- Disable indent for problematic languages
-					disable = { 
-						"python", "yaml", "html", "css", 
-						"javascript", "typescript" 
+					-- Enable indent for web languages
+					-- You can still disable specific ones if they cause issues:
+					-- disable = { "html" }, -- uncomment if HTML indent causes problems
+				},
+
+				-- Enable other useful modules for web development
+				incremental_selection = {
+					enable = true,
+					keymaps = {
+						init_selection = "gnn",
+						node_incremental = "grn",
+						scope_incremental = "grc",
+						node_decremental = "grm",
 					},
+				},
+
+				textobjects = {
+					enable = true,
 				},
 			})
 
@@ -59,8 +77,8 @@ return {
 			ts_config.attach_module = function(module, bufnr)
 				local lang = vim.treesitter.language.get_lang(vim.bo[bufnr].filetype)
 				local problematic_langs = {
-					"html", "css", "javascript", "typescript",
-					"tsx", "jsx", "cpp", "c"
+					-- Remove web languages from problematic list
+					-- Only keep languages that actually cause issues on your system
 				}
 				
 				-- Skip attachment for problematic languages
@@ -73,7 +91,7 @@ return {
 				-- Try to attach safely
 				local success, err = pcall(original_attach, module, bufnr)
 				if not success then
-					-- Silently fail for now
+					-- Log the error for debugging if needed
 					return
 				end
 			end
@@ -90,7 +108,6 @@ return {
 						update_in_insert = false,
 						severity_sort = false,
 					})
-					vim.notify("Diagnostic messages shown", vim.log.levels.INFO)
 					errors_hidden = false
 				else
 					vim.diagnostic.config({
@@ -100,12 +117,34 @@ return {
 						update_in_insert = false,
 						severity_sort = false,
 					})
-					vim.notify("Diagnostic messages hidden", vim.log.levels.INFO)
 					errors_hidden = true
 				end
 			end
 
-			-- Alternative: Completely disable treesitter for specific filetypes
+			-- Function to enable treesitter for web languages
+			local function enable_treesitter_for_web()
+				local web_filetypes = {
+					"html", "css", "javascript", "typescript",
+					"javascriptreact", "typescriptreact", "tsx",
+				}
+				
+				for _, ft in ipairs(web_filetypes) do
+					vim.api.nvim_create_autocmd("FileType", {
+						pattern = ft,
+						callback = function(args)
+							-- Ensure treesitter is enabled for this buffer
+							local success, _ = pcall(vim.treesitter.start, args.buf)
+							if not success then
+								-- Fallback to syntax highlighting if treesitter fails
+								vim.bo[args.buf].syntax = ft
+							end
+						end,
+					})
+				end
+				
+			end
+
+			-- Function to disable treesitter for web languages (keep for toggling)
 			local function disable_treesitter_for_web()
 				local web_filetypes = {
 					"html", "css", "javascript", "typescript",
@@ -126,18 +165,47 @@ return {
 				
 			end
 
-			-- Auto-disable on startup
-			disable_treesitter_for_web()
+			-- Enable web languages on startup (changed from disable to enable)
+			enable_treesitter_for_web()
 
 			-- Keybindings
 			vim.keymap.set('n', '<F12>', toggle_treesitter_errors, { desc = 'Toggle diagnostic messages' })
+			vim.keymap.set('n', '<leader>te', enable_treesitter_for_web, { desc = 'Enable Tree-sitter for web files' })
 			vim.keymap.set('n', '<leader>td', disable_treesitter_for_web, { desc = 'Disable Tree-sitter for web files' })
 		end,
 	},
 
-	-- Keep ts-autotag disabled
+	-- Enable ts-autotag for better HTML/JSX experience
 	{
 		"windwp/nvim-ts-autotag",
-		enabled = false,
+		enabled = true, -- Changed from false to true
+		config = function()
+			require('nvim-ts-autotag').setup({
+				opts = {
+					-- Defaults
+					enable_close = true, -- Auto close tags
+					enable_rename = true, -- Auto rename pairs of tags
+					enable_close_on_slash = false -- Auto close on trailing </
+				},
+				-- Also enable for additional filetypes if needed
+				per_filetype = {
+					["html"] = {
+						enable_close = true
+					},
+					["javascript"] = {
+						enable_close = true
+					},
+					["typescript"] = {
+						enable_close = true
+					},
+					["javascriptreact"] = {
+						enable_close = true
+					},
+					["typescriptreact"] = {
+						enable_close = true
+					},
+				}
+			})
+		end
 	},
 }

@@ -1,4 +1,4 @@
--- Minimal LSP configuration for Windows compatibility
+-- Clean LSP configuration without problematic components
 return {
 	-- Mason
 	{
@@ -18,7 +18,7 @@ return {
 		end,
 	},
 
-	-- Mason LSP config bridge
+	-- Mason LSP config bridge - SIMPLIFIED
 	{
 		"williamboman/mason-lspconfig.nvim",
 		lazy = false,
@@ -27,11 +27,13 @@ return {
 		config = function()
 			require("mason-lspconfig").setup({
 				ensure_installed = {
-					"lua_ls",
-					"cssls",
-					"html",
-				}, -- REMOVED ts_ls and tailwindcss temporarily
-				automatic_installation = false, -- Manual control
+					"lua_ls",        -- Lua Language Server
+					"cssls",         -- CSS Language Server
+					"html",          -- HTML Language Server
+					"ts_ls",         -- TypeScript Language Server (handles JS/TS)
+					"jsonls",        -- JSON Language Server
+				},
+				automatic_installation = true,
 			})
 		end,
 	},
@@ -123,7 +125,7 @@ return {
 		end,
 	},
 
-	-- Minimal LSP Configuration - Only stable servers
+	-- Clean LSP Configuration
 	{
 		"neovim/nvim-lspconfig",
 		event = { "BufReadPre", "BufNewFile" },
@@ -136,6 +138,10 @@ return {
 			local lspconfig = require("lspconfig")
 			local capabilities = require("cmp_nvim_lsp").default_capabilities()
 
+			-- Enhanced capabilities
+			capabilities.textDocument.completion.completionItem.snippetSupport = true
+
+			-- Common on_attach function
 			local on_attach = function(client, bufnr)
 				local bufopts = { noremap = true, silent = true, buffer = bufnr }
 				vim.keymap.set("n", "gD", vim.lsp.buf.declaration, bufopts)
@@ -146,9 +152,15 @@ return {
 				vim.keymap.set("n", "<leader>rn", vim.lsp.buf.rename, bufopts)
 				vim.keymap.set("n", "<leader>ca", vim.lsp.buf.code_action, bufopts)
 				vim.keymap.set("n", "gr", vim.lsp.buf.references, bufopts)
+				vim.keymap.set("n", "<leader>f", function()
+					vim.lsp.buf.format({ async = true })
+				end, bufopts)
+
+				-- Show success message
+				vim.notify("LSP attached: " .. client.name, vim.log.levels.INFO)
 			end
 
-			-- Only setup stable LSP servers
+			-- Lua Language Server
 			lspconfig.lua_ls.setup({
 				capabilities = capabilities,
 				on_attach = on_attach,
@@ -165,14 +177,51 @@ return {
 				},
 			})
 
+			-- CSS Language Server
 			lspconfig.cssls.setup({
 				capabilities = capabilities,
 				on_attach = on_attach,
 			})
 
+			-- HTML Language Server
 			lspconfig.html.setup({
 				capabilities = capabilities,
 				on_attach = on_attach,
+			})
+
+			-- TypeScript Language Server (handles both JS and TS)
+			lspconfig.ts_ls.setup({
+				capabilities = capabilities,
+				on_attach = on_attach,
+				filetypes = {
+					"javascript",
+					"javascriptreact",
+					"javascript.jsx",
+					"typescript",
+					"typescriptreact",
+					"typescript.tsx"
+				},
+				settings = {
+					typescript = {
+						preferences = {
+							disableSuggestions = false,
+							includeCompletionsForModuleExports = true,
+						}
+					},
+					javascript = {
+						preferences = {
+							disableSuggestions = false,
+							includeCompletionsForModuleExports = true,
+						}
+					}
+				}
+			})
+
+			-- JSON Language Server
+			lspconfig.jsonls.setup({
+				capabilities = capabilities,
+				on_attach = on_attach,
+				filetypes = { "json", "jsonc" },
 			})
 
 			-- LSP diagnostic configuration
@@ -181,16 +230,34 @@ return {
 				signs = true,
 				underline = true,
 				update_in_insert = false,
+				severity_sort = true,
+			})
+
+			-- Better LSP UI
+			vim.lsp.handlers["textDocument/hover"] = vim.lsp.with(vim.lsp.handlers.hover, {
+				border = "rounded",
+			})
+
+			vim.lsp.handlers["textDocument/signatureHelp"] = vim.lsp.with(vim.lsp.handlers.signature_help, {
+				border = "rounded",
 			})
 		end,
 	},
 
-	-- Emmet for HTML/CSS (works without LSP)
+	-- Emmet for HTML/CSS
 	{
 		"mattn/emmet-vim",
-		ft = { "html", "css" },
+		ft = { "html", "css", "javascript", "javascriptreact", "typescript", "typescriptreact" },
 		config = function()
 			vim.g.user_emmet_leader_key = '<C-y>'
+			vim.g.user_emmet_settings = {
+				javascript = {
+					extends = 'jsx',
+				},
+				typescript = {
+					extends = 'tsx',
+				},
+			}
 		end,
 	},
 }
