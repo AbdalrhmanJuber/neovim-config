@@ -465,24 +465,68 @@ return {
 				end,
 			})
 
-			-- Force TypeScript server to start for specific file types
+			-- Force TypeScript server to start for specific file types with retries
 			vim.api.nvim_create_autocmd({ "BufRead", "BufNewFile" }, {
 				pattern = { "*.js", "*.jsx", "*.ts", "*.tsx" },
 				callback = function(event)
 					local bufnr = event.buf
 					
-					-- Small delay to ensure file is properly loaded
-					vim.defer_fn(function()
-						-- Check if ts_ls is already attached
+					-- Function to check and start TypeScript server
+					local function check_and_start_ts_server()
 						local clients = vim.lsp.get_clients({ bufnr = bufnr, name = "ts_ls" })
 						if #clients == 0 then
-							-- Force start ts_ls for this buffer
-							vim.notify("🔄 Force starting TypeScript server...", vim.log.levels.INFO)
+							vim.notify("🔄 Starting TypeScript server...", vim.log.levels.INFO)
 							vim.cmd("LspStart ts_ls")
+							
+							-- Schedule a check after server should have started
+							vim.defer_fn(function()
+								local new_clients = vim.lsp.get_clients({ bufnr = bufnr, name = "ts_ls" })
+								if #new_clients == 0 then
+									vim.notify("⚠️ TypeScript server failed to start. Use <leader>ld to diagnose.", vim.log.levels.WARN)
+								else
+									vim.notify("✅ TypeScript server started successfully!", vim.log.levels.INFO)
+								end
+							end, 2000)
 						end
-					end, 100)
+					end
+					
+					-- Small initial delay to ensure file is properly loaded
+					vim.defer_fn(check_and_start_ts_server, 100)
 				end,
 			})
+
+			-- Add a command to manually trigger server attachment
+			vim.api.nvim_create_user_command('LspAttachAll', function()
+				vim.notify("🔄 Attempting to attach all relevant LSP servers...", vim.log.levels.INFO)
+				
+				local bufnr = vim.api.nvim_get_current_buf()
+				local filetype = vim.bo[bufnr].filetype
+				
+				local server_map = {
+					javascript = { "ts_ls", "eslint" },
+					javascriptreact = { "ts_ls", "eslint" },
+					typescript = { "ts_ls", "eslint" },
+					typescriptreact = { "ts_ls", "eslint" },
+					lua = { "lua_ls" },
+					html = { "html" },
+					css = { "cssls" },
+					json = { "jsonls" },
+				}
+				
+				local servers = server_map[filetype] or {}
+				for _, server in ipairs(servers) do
+					vim.cmd("LspStart " .. server)
+				end
+				
+				if #servers > 0 then
+					vim.notify("🚀 Started servers: " .. table.concat(servers, ", "), vim.log.levels.INFO)
+				else
+					vim.notify("❓ No LSP servers configured for filetype: " .. filetype, vim.log.levels.WARN)
+				end
+			end, { desc = "Manually attach all relevant LSP servers" })
+
+			-- Add keybinding for manual attachment
+			vim.keymap.set("n", "<leader>la", "<cmd>LspAttachAll<cr>", { desc = "Attach all LSP servers" })
 		end,
 	},
 
