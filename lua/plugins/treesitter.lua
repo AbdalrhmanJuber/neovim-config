@@ -1,4 +1,4 @@
--- Minimal treesitter configuration for Windows
+-- Windows-safe treesitter configuration
 return {
 	{
 		"nvim-treesitter/nvim-treesitter",
@@ -8,44 +8,81 @@ return {
 			-- Windows compatibility settings
 			require("nvim-treesitter.install").prefer_git = false
 			require("nvim-treesitter.install").compilers = { "gcc", "clang", "cc" }
+			
 			require("nvim-treesitter.configs").setup({
-				-- Only install the most stable parsers
+				-- Only install parsers that work reliably on Windows
 				ensure_installed = {
 					"lua",
 					"vim",
 					"vimdoc",
-					"query", -- Core parsers
-					"css",
+					"query",
 					"json",
 					"yaml",
-					"markdown", -- Safe parsers
-					"typescript",
-					"javascript",
+					"markdown",
 				},
 
-				sync_install = true,
+				sync_install = false,
 				auto_install = false,
-				ignore_install = { "html", "cpp", "c" }, -- Ignore problematic ones
+				
+				-- Completely ignore problematic parsers
+				ignore_install = { 
+					"html", "css", "javascript", "typescript", 
+					"tsx", "jsx", "cpp", "c" 
+				},
 
 				highlight = {
 					enable = true,
 					additional_vim_regex_highlighting = { "markdown" },
-					-- Disable for problematic file types
-					disable = { "javascript", "html", "jsx", "tsx" },
+					
+					-- Disable highlighting for web languages entirely
+					disable = { 
+						"html", "css", "javascript", "typescript", 
+						"javascriptreact", "typescriptreact",
+						"tsx", "jsx", "cpp", "c"
+					},
 				},
 
 				indent = {
 					enable = true,
-					disable = { "python", "javascript", "html" },
+					-- Disable indent for problematic languages
+					disable = { 
+						"python", "yaml", "html", "css", 
+						"javascript", "typescript" 
+					},
 				},
 			})
 
-			-- Toggle to completely remove/show error messages
+			-- Override the treesitter attach to prevent errors
+			local ts_config = require("nvim-treesitter.configs")
+			local original_attach = ts_config.attach_module
+			
+			ts_config.attach_module = function(module, bufnr)
+				local lang = vim.treesitter.language.get_lang(vim.bo[bufnr].filetype)
+				local problematic_langs = {
+					"html", "css", "javascript", "typescript",
+					"tsx", "jsx", "cpp", "c"
+				}
+				
+				-- Skip attachment for problematic languages
+				for _, p_lang in ipairs(problematic_langs) do
+					if lang == p_lang then
+						return -- Skip attachment
+					end
+				end
+				
+				-- Try to attach safely
+				local success, err = pcall(original_attach, module, bufnr)
+				if not success then
+					-- Silently fail for now
+					return
+				end
+			end
+
+			-- Toggle diagnostic messages
 			local errors_hidden = false
 
 			local function toggle_treesitter_errors()
 				if errors_hidden then
-					-- Show errors by enabling virtual text and signs
 					vim.diagnostic.config({
 						virtual_text = true,
 						signs = true,
@@ -53,33 +90,54 @@ return {
 						update_in_insert = false,
 						severity_sort = false,
 					})
-					vim.notify("Tree-sitter error messages shown", vim.log.levels.INFO)
+					vim.notify("Diagnostic messages shown", vim.log.levels.INFO)
 					errors_hidden = false
 				else
-					-- Hide errors by disabling virtual text and signs completely
 					vim.diagnostic.config({
-						virtual_text = false,  -- This removes the text completely
-						signs = false,         -- This removes the error signs/icons
-						underline = false,     -- This removes underlines
+						virtual_text = false,
+						signs = false,
+						underline = false,
 						update_in_insert = false,
 						severity_sort = false,
 					})
-					vim.notify("Tree-sitter error messages hidden", vim.log.levels.INFO)
+					vim.notify("Diagnostic messages hidden", vim.log.levels.INFO)
 					errors_hidden = true
 				end
 			end
 
-			-- Set keybinding
-			vim.keymap.set('n', '<F12>', toggle_treesitter_errors, { desc = 'Toggle Tree-sitter error messages' })
+			-- Alternative: Completely disable treesitter for specific filetypes
+			local function disable_treesitter_for_web()
+				local web_filetypes = {
+					"html", "css", "javascript", "typescript",
+					"javascriptreact", "typescriptreact"
+				}
+				
+				for _, ft in ipairs(web_filetypes) do
+					vim.api.nvim_create_autocmd("FileType", {
+						pattern = ft,
+						callback = function(args)
+							-- Disable treesitter for this buffer
+							vim.treesitter.stop(args.buf)
+							-- Use basic syntax highlighting instead
+							vim.bo[args.buf].syntax = ft
+						end,
+					})
+				end
+				
+			end
 
-			-- Alternative: If you want to permanently disable error messages, uncomment this:
-			-- vim.diagnostic.config({ virtual_text = false, signs = false })
+			-- Auto-disable on startup
+			disable_treesitter_for_web()
+
+			-- Keybindings
+			vim.keymap.set('n', '<F12>', toggle_treesitter_errors, { desc = 'Toggle diagnostic messages' })
+			vim.keymap.set('n', '<leader>td', disable_treesitter_for_web, { desc = 'Disable Tree-sitter for web files' })
 		end,
 	},
 
-	-- Disable ts-autotag temporarily
+	-- Keep ts-autotag disabled
 	{
 		"windwp/nvim-ts-autotag",
-		enabled = false, -- Disable until treesitter is stable
+		enabled = false,
 	},
 }
