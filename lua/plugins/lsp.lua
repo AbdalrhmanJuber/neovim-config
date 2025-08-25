@@ -1,4 +1,3 @@
-
 -- Minimal LSP configuration for Windows compatibility
 return {
 	-- Mason
@@ -29,15 +28,19 @@ return {
 			require("mason-lspconfig").setup({
 				ensure_installed = {
 					"lua_ls",
-					"cssls",
-					"html",
+					"cssls", -- CSS Language Server
+					"html", -- HTML Language Server
+					"emmet_ls", -- Emmet Language Server
+					"tailwindcss", -- Tailwind CSS Language Server
 					"ts_ls",
-					"tailwindcss",
+					"eslint",
+					"vtsls",
 					"jsonls",
 					"pyright",
-
-				}, -- REMOVED ts_ls and tailwindcss temporarily
-				automatic_installation = true, -- Manual control
+					"clangd",
+					"bashls",
+				},
+				automatic_installation = true,
 			})
 		end,
 	},
@@ -129,7 +132,75 @@ return {
 		end,
 	},
 
-	-- Minimal LSP Configuration - Only stable servers
+	-- nvim-vtsls (keep this as an alternative option)
+	{
+		"yioneko/nvim-vtsls",
+		ft = { "typescript", "javascript", "javascriptreact", "typescriptreact" },
+		dependencies = {
+			"neovim/nvim-lspconfig",
+		},
+		enabled = false, -- Disable this since we're using ts_ls
+		config = function()
+			-- Override the default root_dir to fix Windows path issues
+			local lspconfig = require("lspconfig")
+
+			-- Custom root directory function that's more Windows-friendly
+			local function get_typescript_root(fname)
+				local util = require("lspconfig.util")
+
+				-- First try the standard patterns
+				local root = util.root_pattern("tsconfig.json", "package.json", "jsconfig.json", ".git")(fname)
+
+				-- If no root found, use the file's directory
+				if not root then
+					root = vim.fn.fnamemodify(fname, ":p:h")
+				end
+
+				return root
+			end
+
+			-- Configure vtsls with the custom root_dir
+			require("vtsls").config({
+				-- Add the custom root_dir here
+				root_dir = get_typescript_root,
+				settings = {
+					vtsls = {
+						enableMoveToFileCodeAction = true,
+						autoUseWorkspaceTsdk = true,
+						experimental = {
+							completion = {
+								enableServerSideFuzzyMatch = true,
+							},
+						},
+					},
+					typescript = {
+						updateImportsOnFileMove = { enabled = "always" },
+						inlayHints = {
+							parameterNames = { enabled = "literals" },
+							parameterTypes = { enabled = true },
+							variableTypes = { enabled = true },
+							propertyDeclarationTypes = { enabled = true },
+							functionLikeReturnTypes = { enabled = true },
+							enumMemberValues = { enabled = true },
+						},
+					},
+					javascript = {
+						updateImportsOnFileMove = { enabled = "always" },
+						inlayHints = {
+							parameterNames = { enabled = "literals" },
+							parameterTypes = { enabled = true },
+							variableTypes = { enabled = true },
+							propertyDeclarationTypes = { enabled = true },
+							functionLikeReturnTypes = { enabled = true },
+							enumMemberValues = { enabled = true },
+						},
+					},
+				},
+			})
+		end,
+	},
+
+	-- LSP Configuration
 	{
 		"neovim/nvim-lspconfig",
 		event = { "BufReadPre", "BufNewFile" },
@@ -152,9 +223,16 @@ return {
 				vim.keymap.set("n", "<leader>rn", vim.lsp.buf.rename, bufopts)
 				vim.keymap.set("n", "<leader>ca", vim.lsp.buf.code_action, bufopts)
 				vim.keymap.set("n", "gr", vim.lsp.buf.references, bufopts)
+
+				-- ESLint specific keybindings
+				if client.name == "eslint" then
+					vim.keymap.set("n", "<leader>lf", function()
+						vim.cmd("EslintFixAll")
+					end, { buffer = bufnr, desc = "ESLint Fix All" })
+				end
 			end
 
-			-- Only setup stable LSP servers
+			-- Lua LSP
 			lspconfig.lua_ls.setup({
 				capabilities = capabilities,
 				on_attach = on_attach,
@@ -171,18 +249,203 @@ return {
 				},
 			})
 
-			-- TypeScript LSP
+			-- TypeScript/JavaScript LSP (ts_ls)
 			lspconfig.ts_ls.setup({
 				capabilities = capabilities,
 				on_attach = on_attach,
+				settings = {
+					typescript = {
+						inlayHints = {
+							includeInlayParameterNameHints = "all",
+							includeInlayParameterNameHintsWhenArgumentMatchesName = false,
+							includeInlayFunctionParameterTypeHints = true,
+							includeInlayVariableTypeHints = true,
+							includeInlayPropertyDeclarationTypeHints = true,
+							includeInlayFunctionLikeReturnTypeHints = true,
+							includeInlayEnumMemberValueHints = true,
+						},
+					},
+					javascript = {
+						inlayHints = {
+							includeInlayParameterNameHints = "all",
+							includeInlayParameterNameHintsWhenArgumentMatchesName = false,
+							includeInlayFunctionParameterTypeHints = true,
+							includeInlayVariableTypeHints = true,
+							includeInlayPropertyDeclarationTypeHints = true,
+							includeInlayFunctionLikeReturnTypeHints = true,
+							includeInlayEnumMemberValueHints = true,
+						},
+					},
+				},
 			})
 
-			lspconfig.cssls.setup({
+			-- ESLint LSP
+			lspconfig.eslint.setup({
+				capabilities = capabilities,
+				on_attach = function(client, bufnr)
+					on_attach(client, bufnr)
+
+					-- Auto-fix on save
+					vim.api.nvim_create_autocmd("BufWritePre", {
+						buffer = bufnr,
+						command = "EslintFixAll",
+					})
+				end,
+				settings = {
+					codeAction = {
+						disableRuleComment = {
+							enable = true,
+							location = "separateLine",
+						},
+						showDocumentation = {
+							enable = true,
+						},
+					},
+					codeActionOnSave = {
+						enable = false,
+						mode = "all",
+					},
+					experimental = {
+						useFlatConfig = false,
+					},
+					format = true,
+					nodePath = "",
+					onIgnoredFiles = "off",
+					packageManager = "npm",
+					problems = {
+						shortenToSingleLine = false,
+					},
+					quiet = false,
+					rulesCustomizations = {},
+					run = "onType",
+					useESLintClass = false,
+					validate = "on",
+					workingDirectory = {
+						mode = "location",
+					},
+				},
+			})
+			-- C/C++ LSP (clangd) - Add this
+			lspconfig.clangd.setup({
+				capabilities = capabilities,
+				on_attach = on_attach,
+				cmd = {
+					"clangd",
+					"--background-index",
+					"--clang-tidy",
+					"--header-insertion=iwyu",
+					"--completion-style=detailed",
+					"--function-arg-placeholders",
+					"--fallback-style=llvm",
+				},
+				init_options = {
+					usePlaceholders = true,
+					completeUnimported = true,
+					clangdFileStatus = true,
+				},
+				filetypes = { "c", "cpp", "objc", "objcpp", "cuda", "proto" },
+				root_dir = function(fname)
+					local util = require("lspconfig.util")
+					return util.root_pattern(
+						"Makefile",
+						"configure.ac",
+						"configure.in",
+						"config.h.in",
+						"meson.build",
+						"meson_options.txt",
+						"build.ninja"
+					)(fname) or util.root_pattern("compile_commands.json", "compile_flags.txt")(fname) or util.find_git_ancestor(
+						fname
+					)
+				end,
+			})
+		-- Enhanced CSS LSP
+        lspconfig.cssls.setup({
+            capabilities = capabilities,
+            on_attach = on_attach,
+            settings = {
+                css = {
+                    validate = true,
+                    lint = {
+                        unknownAtRules = "ignore", -- Ignore unknown @ rules (useful for Tailwind)
+                    },
+                },
+                scss = {
+                    validate = true,
+                    lint = {
+                        unknownAtRules = "ignore",
+                    },
+                },
+                less = {
+                    validate = true,
+                    lint = {
+                        unknownAtRules = "ignore",
+                    },
+                },
+            },
+            filetypes = { "css", "scss", "less", "sass" },
+        })
+
+        -- Enhanced HTML LSP
+        lspconfig.html.setup({
+            capabilities = capabilities,
+            on_attach = on_attach,
+            settings = {
+                html = {
+                    format = {
+                        templating = true,
+                        wrapLineLength = 120,
+                        wrapAttributes = "auto",
+                    },
+                    hover = {
+                        documentation = true,
+                        references = true,
+                    },
+                },
+            },
+            filetypes = { "html", "htmldjango", "blade" },
+        })
+
+        -- Add Emmet LSP for better HTML/CSS snippets
+        lspconfig.emmet_ls.setup({
+            capabilities = capabilities,
+            on_attach = on_attach,
+            filetypes = {
+                "css",
+                "eruby",
+                "html",
+                "javascript",
+                "javascriptreact",
+                "less",
+                "sass",
+                "scss",
+                "svelte",
+                "pug",
+                "typescriptreact",
+                "vue",
+            },
+            init_options = {
+                html = {
+                    options = {
+                        -- For possible options, see: https://github.com/emmetio/emmet/blob/master/src/config.ts#L79-L267
+                        ["bem.enabled"] = true,
+                    },
+                },
+            },
+        })			-- Tailwind CSS LSP
+			lspconfig.tailwindcss.setup({
 				capabilities = capabilities,
 				on_attach = on_attach,
 			})
 
-			lspconfig.html.setup({
+			-- JSON LSP
+			lspconfig.jsonls.setup({
+				capabilities = capabilities,
+				on_attach = on_attach,
+			})
+
+			-- Python LSP
+			lspconfig.pyright.setup({
 				capabilities = capabilities,
 				on_attach = on_attach,
 			})
@@ -202,7 +465,7 @@ return {
 		"mattn/emmet-vim",
 		ft = { "html", "css" },
 		config = function()
-			vim.g.user_emmet_leader_key = '<C-y>'
+			vim.g.user_emmet_leader_key = "<C-y>"
 		end,
 	},
 }

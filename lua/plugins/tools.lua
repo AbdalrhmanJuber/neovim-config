@@ -3,26 +3,29 @@ return {
 	-- GitHub Copilot
 	{
 		"github/copilot.vim",
-		lazy = false,
-		event = "InsertEnter",
+		cmd = { "Copilot" }, -- load only when you call a Copilot command
 		config = function()
 			vim.g.copilot_no_tab_map = true
+			vim.g.copilot_proxy_strict_ssl = false
 
+			-- Start with Copilot disabled
+			vim.g.copilot_enabled = false
+
+			-- Accept suggestion
 			vim.keymap.set("i", "<C-Z>", 'copilot#Accept("\\<CR>")', {
 				expr = true,
 				replace_keycodes = false,
 			})
 
+			-- Enable / Disable / Toggle
 			vim.keymap.set("n", "<leader>ce", ":Copilot enable<CR>", {
 				desc = "Enable Copilot",
 				silent = true,
 			})
-
 			vim.keymap.set("n", "<leader>cd", ":Copilot disable<CR>", {
 				desc = "Disable Copilot",
 				silent = true,
 			})
-
 			vim.keymap.set("n", "<leader>ct", function()
 				if vim.g.copilot_enabled == false then
 					vim.cmd("Copilot enable")
@@ -36,27 +39,27 @@ return {
 				silent = true,
 			})
 
+			-- Filetypes (all off by default, selectively enabled later)
 			vim.g.copilot_filetypes = {
 				["*"] = false,
-				["javascript"] = true,
-				["typescript"] = true,
-				["lua"] = true,
-				["rust"] = true,
-				["c"] = true,
+				javascript = true,
+				typescript = true,
+				lua = true,
+				rust = true,
+				c = true,
 				["c#"] = true,
 				["c++"] = true,
-				["go"] = true,
-				["python"] = true,
-				["html"] = true,
-				["css"] = true,
-				["scss"] = true,
-				["json"] = true,
-				["yaml"] = true,
-				["markdown"] = true,
+				go = true,
+				python = true,
+				html = true,
+				css = true,
+				scss = true,
+				json = true,
+				yaml = true,
+				markdown = true,
 			}
 		end,
 	},
-
 	-- Emmet
 	{
 		"mattn/emmet-vim",

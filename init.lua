@@ -1,4 +1,4 @@
 -- Main entry point - keep this minimal
-require("config.options")
-require("config.keymaps")
-require("config.lazy")
+ require("config.options")
+ require("config.keymaps")
+ require("config.lazy")
