@@ -61,8 +61,6 @@ return {
 
 				indent = {
 					enable = true,
-					-- You might want to disable HTML indent if it's problematic
-					-- disable = { "html" },
 				},
 
 				-- Enhanced incremental selection for web development
