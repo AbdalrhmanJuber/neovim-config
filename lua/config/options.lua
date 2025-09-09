@@ -12,7 +12,7 @@ vim.g.mapleader = " "
 
 -- Performance optimizations
 vim.opt.updatetime = 300
-vim.opt.timeoutlen = 500
+vim.opt.timeoutlen = 1000
 vim.opt.lazyredraw = true
 vim.opt.synmaxcol = 200
 

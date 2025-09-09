@@ -69,7 +69,7 @@ return {
 	-- Formatter
 	{
 		"stevearc/conform.nvim",
-		event = { "BufWritePre" },
+		event = { "BufReadPre", "BufNewFile" }, -- Load earlier instead of just BufWritePre
 		cmd = { "ConformInfo" },
 		keys = {
 			{
@@ -91,7 +91,7 @@ return {
 				markdown = { "prettier" },
 				lua = { "stylua" },
 				python = { "black" },
-				["cpp"] = { "clang_format" },
+				cpp = { "clang_format" },
 				c = { "clang_format" },
 				["*"] = { "trim_whitespace" },
 			},

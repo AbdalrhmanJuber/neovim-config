@@ -5,12 +5,43 @@ return {
 		"windwp/nvim-autopairs",
 		event = "InsertEnter",
 		config = function()
-			require("nvim-autopairs").setup({
-				check_ts = true, -- Enable treesitter integration
-				ts = true, -- Use treesitter
+			local autopairs = require("nvim-autopairs")
+
+			autopairs.setup({
+				check_ts = true, -- treesitter integration
+				ts_config = {
+					lua = { "string", "source" },
+					javascript = { "string", "template_string" },
+					java = false,
+				},
+				disable_filetype = { "TelescopePrompt", "spectre_panel" },
+				fast_wrap = {
+					map = "<M-e>",
+					chars = { "{", "[", "(", '"', "'" },
+					pattern = string.gsub([[ [%'%"%)%>%]%)%}%,] ]], "%s+", ""),
+					offset = 0,
+					end_key = "$",
+					keys = "qwertyuiopzxcvbnmasdfghjkl",
+					check_comma = true,
+					highlight = "PmenuSel",
+					highlight_grey = "LineNr",
+				},
 			})
-			
-			-- Integrate with nvim-cmp if available
+
+			-- Add custom rule for angle brackets
+			local Rule = require("nvim-autopairs.rule")
+			autopairs.add_rules({
+				Rule("<", ">"):with_pair(function(opts)
+					-- Only auto-close in specific contexts where it makes sense
+					local line = opts.line
+					local col = opts.col
+					local char = line:sub(col - 1, col - 1)
+					-- Avoid auto-closing after certain characters
+					return not vim.tbl_contains({ "=", "<", ">" }, char)
+				end),
+			})
+
+			-- Integration with nvim-cmp if you're using it
 			local cmp_autopairs = require("nvim-autopairs.completion.cmp")
 			local cmp = require("cmp")
 			cmp.event:on("confirm_done", cmp_autopairs.on_confirm_done())
@@ -23,9 +54,17 @@ return {
 		event = { "BufReadPost", "BufNewFile" },
 		init = function()
 			-- Disable for languages that treesitter handles well
-			vim.g.polyglot_disabled = { 
-				"lua", "html", "css", "javascript", "typescript", 
-				"json", "yaml", "markdown", "c", "vim" 
+			vim.g.polyglot_disabled = {
+				"lua",
+				"html",
+				"css",
+				"javascript",
+				"typescript",
+				"json",
+				"yaml",
+				"markdown",
+				"c",
+				"vim",
 			}
 		end,
 	},
@@ -37,7 +76,8 @@ return {
 		config = function()
 			vim.g.closetag_filenames = "*.html,*.xhtml,*.phtml,*.jsx,*.tsx,*.js,*.ts,*.vue,*.svelte"
 			vim.g.closetag_xhtml_filenames = "*.xhtml,*.jsx,*.tsx,*.vue"
-			vim.g.closetag_filetypes = "html,xhtml,phtml,javascript,typescript,javascriptreact,typescriptreact,vue,svelte"
+			vim.g.closetag_filetypes =
+				"html,xhtml,phtml,javascript,typescript,javascriptreact,typescriptreact,vue,svelte"
 			vim.g.closetag_xhtml_filetypes = "xhtml,jsx,tsx,vue"
 			vim.g.closetag_emptyTags_caseSensitive = 1
 			vim.g.closetag_regions = {
@@ -103,15 +143,24 @@ return {
 					char = "│",
 					tab_char = "│",
 				},
-				scope = { 
+				scope = {
 					enabled = true, -- Enable scope highlighting with treesitter
 					show_start = true,
 					show_end = true,
 				},
 				exclude = {
 					filetypes = {
-						"help", "alpha", "dashboard", "neo-tree", "Trouble",
-						"trouble", "lazy", "mason", "notify", "toggleterm", "lazyterm",
+						"help",
+						"alpha",
+						"dashboard",
+						"neo-tree",
+						"Trouble",
+						"trouble",
+						"lazy",
+						"mason",
+						"notify",
+						"toggleterm",
+						"lazyterm",
 					},
 				},
 			})

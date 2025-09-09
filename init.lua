@@ -2,3 +2,11 @@
  require("config.options")
  require("config.keymaps")
  require("config.lazy")
+ -- vim.cmd[[colorscheme tokyonight-night]]
+		-- vim.cmd("colorscheme rose-pine")
+
+    -- vim.cmd("colorscheme vague")
+
+-- vim.cmd[[colorscheme solarized-osaka]]
+
+vim.cmd.colorscheme("catppuccin-mocha")

@@ -29,11 +29,13 @@ vim.api.nvim_set_keymap("i", "<C-j>", "<Down>", { noremap = true, silent = true 
 vim.api.nvim_set_keymap("i", "<C-k>", "<Up>", { noremap = true, silent = true })
 vim.api.nvim_set_keymap("i", "<C-h>", "<Left>", { noremap = true, silent = true })
 vim.api.nvim_set_keymap("i", "<C-l>", "<Right>", { noremap = true, silent = true })
-
 -- Development server keymaps
 vim.keymap.set("n", "<leader>s", function()
 	os.execute('tasklist | findstr /I "live-server" || start cmd /c live-server')
 end)
+
+-- LSP and formatting keymaps (global)
+vim.keymap.set("n", "<leader>ca", vim.lsp.buf.code_action, { desc = "Code actions" })
 
 vim.keymap.set("n", "<leader>ks", function()
 	os.execute("taskkill /IM node.exe /F")
@@ -45,3 +47,40 @@ vim.keymap.set("n", "<leader>tp", function()
   local cmd = string.format('wt -w 0 sp -p "PowerShell" -d "%s"', file_dir)
   os.execute(cmd)
 end, { desc = "Open PowerShell 7 vertical split pane in Windows Terminal" })
+
+vim.keymap.set("n", "<leader>sr", function()
+  local old = vim.fn.input("Find: ")
+  if old == "" then return end
+  local new = vim.fn.input("Replace with: ")
+
+  -- File types to search
+  local file_pattern = "**/*.{html,css,js}"
+  local files = vim.fn.glob(file_pattern, 0, 1)
+
+  local filtered_files = {}
+  for _, f in ipairs(files) do
+    if not f:match("node_modules") and not f:match("/%.") then
+      table.insert(filtered_files, f)
+    end
+  end
+
+  if #filtered_files == 0 then
+    print("No files found to replace text in.")
+    return
+  end
+
+  -- Process each file individually
+  local count = 0
+  for _, file in ipairs(filtered_files) do
+    vim.cmd("edit " .. file)
+    -- Use a different separator to avoid conflicts
+    local result = vim.fn.search(old)
+    if result > 0 then
+      vim.cmd("silent! %substitute#" .. vim.fn.escape(old, "#\\") .. "#" .. vim.fn.escape(new, "#\\") .. "#ge")
+      vim.cmd("update")
+      count = count + 1
+    end
+  end
+  
+  print("Replacement complete in " .. count .. " files.")
+end, { desc = "Search & replace across project (HTML/CSS/JS)" })

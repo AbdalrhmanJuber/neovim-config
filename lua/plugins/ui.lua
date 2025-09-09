@@ -8,9 +8,29 @@ return {
 		lazy = false,
 		config = function()
 			-- Set the colorscheme after the plugin loads
-			vim.cmd.colorscheme("catppuccin-mocha")
+			-- vim.cmd.colorscheme("catppuccin-mocha")
 		end,
 	},
+{
+  "vague2k/vague.nvim",
+  lazy = false, -- make sure we load this during startup if it is your main colorscheme
+  priority = 1000, -- make sure to load this before all the other plugins
+  config = function()
+    -- NOTE: you do not need to call setup if you don't want to.
+    require("vague").setup({
+      -- optional configuration here
+    })
+    -- vim.cmd("colorscheme vague")
+  end
+},
+ {
+	"rose-pine/neovim",
+	name = "rose-pine",
+	config = function()
+		vim.cmd("colorscheme rose-pine")
+
+	end
+},
 	{
 		"craftzdog/solarized-osaka.nvim",
 		priority = 1000,
