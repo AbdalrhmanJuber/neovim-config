@@ -1,16 +1,121 @@
 -- UI related plugins (colorschemes, statusline, file explorer)
 return {
 	-- Color schemes
-	{
-		"catppuccin/nvim",
-		name = "catppuccin",
-		priority = 1001,
-		lazy = false,
-		config = function()
-			-- Set the colorscheme after the plugin loads
-			-- vim.cmd.colorscheme("catppuccin-mocha")
-		end,
-	},
+{
+	"catppuccin/nvim",
+	name = "catppuccin",
+	priority = 1001,
+	lazy = false,
+	config = function()
+		require("catppuccin").setup({
+			flavour = "mocha", -- latte, frappe, macchiato, mocha
+			background = { -- :h background
+				light = "latte",
+				dark = "mocha",
+			},
+			transparent_background = false, -- disables setting the background color
+			show_end_of_buffer = false, -- shows the '~' characters after the end of buffers
+			term_colors = true, -- sets terminal colors (e.g. `g:terminal_color_0`)
+			dim_inactive = {
+				enabled = false, -- dims the background color of inactive window
+				shade = "dark",
+				percentage = 0.15, -- percentage of the shade to apply to the inactive window
+			},
+			no_italic = false, -- Force no italic
+			no_bold = false, -- Force no bold
+			no_underline = false, -- Force no underline
+			styles = { -- Handles the styles of general hi groups (see `:h highlight-args`):
+				comments = { "italic" }, -- Change the style of comments
+				conditionals = { "italic" },
+				loops = {},
+				functions = { "bold" },
+				keywords = { "italic" },
+				strings = {},
+				variables = {},
+				numbers = {},
+				booleans = {},
+				properties = {},
+				types = { "italic" },
+				operators = {},
+			},
+			color_overrides = {
+				mocha = {
+					-- You can override specific colors here
+					-- base = "#000000", -- Background
+					-- mantle = "#010101",
+					-- crust = "#020202",
+				},
+			},
+			custom_highlights = function(colors)
+				return {
+					-- Custom highlight groups
+					Comment = { fg = colors.overlay1, style = { "italic" } },
+					CursorLineNr = { fg = colors.yellow, style = { "bold" } },
+					LineNr = { fg = colors.overlay0 },
+					-- Add more custom highlights here
+				}
+			end,
+			integrations = {
+				cmp = true,
+				gitsigns = true,
+				nvimtree = true,
+				treesitter = true,
+				notify = true,
+				telescope = {
+					enabled = true,
+					style = "nvchad" -- or "classic"
+				},
+				mason = true,
+				which_key = true,
+				indent_blankline = {
+					enabled = true,
+					scope_color = "", -- catppuccin color (eg. `lavender`) Default: text
+					colored_indent_levels = false,
+				},
+				native_lsp = {
+					enabled = true,
+					virtual_text = {
+						errors = { "italic" },
+						hints = { "italic" },
+						warnings = { "italic" },
+						information = { "italic" },
+					},
+					underlines = {
+						errors = { "underline" },
+						hints = { "underline" },
+						warnings = { "underline" },
+						information = { "underline" },
+					},
+					inlay_hints = {
+						background = true,
+					},
+				},
+				-- Add more integrations as needed
+			},
+		})
+
+		-- Set the colorscheme
+		vim.cmd.colorscheme("catppuccin-mocha")
+		
+		-- Optional: Set up some autocommands for dynamic theming
+		local group = vim.api.nvim_create_augroup("CatppuccinTheme", { clear = true })
+		
+		-- Auto-switch based on time of day (optional)
+		vim.api.nvim_create_autocmd("VimEnter", {
+			group = group,
+			callback = function()
+				local hour = tonumber(os.date("%H"))
+				if hour >= 6 and hour < 18 then
+					-- Day time
+					vim.cmd.colorscheme("catppuccin-latte")
+				else
+					-- Night time
+					vim.cmd.colorscheme("catppuccin-mocha")
+				end
+			end,
+		})
+	end,
+},
 {
   "vague2k/vague.nvim",
   lazy = false, -- make sure we load this during startup if it is your main colorscheme
@@ -27,7 +132,7 @@ return {
 	"rose-pine/neovim",
 	name = "rose-pine",
 	config = function()
-		vim.cmd("colorscheme rose-pine")
+		-- vim.cmd("colorscheme rose-pine")
 
 	end
 },

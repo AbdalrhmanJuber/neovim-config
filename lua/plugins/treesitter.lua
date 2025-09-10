@@ -11,47 +11,71 @@ return {
 			-- Windows compatibility settings
 			require("nvim-treesitter.install").prefer_git = false
 			require("nvim-treesitter.install").compilers = { "gcc", "clang", "cc" }
-			
+
 			require("nvim-treesitter.configs").setup({
 				-- Comprehensive web development parsers
 				ensure_installed = {
 					-- Core
-					"lua", "vim", "vimdoc", "query",
-					
+					"lua",
+					"vim",
+					"vimdoc",
+					"query",
+
 					-- Web fundamentals
-					"html", "css", "scss", "javascript", "typescript", "tsx",
-					
+					"html",
+					"css",
+					"scss",
+					"javascript",
+					"typescript",
+					"tsx",
+
 					-- Web frameworks/libraries
 					"angular",
-					
+
 					-- Styling
 					"styled",
-					
+
 					-- Data formats
-					"json", "json5", "jsonc", "yaml", "toml", "xml",
-					
+					"json",
+					"json5",
+					"jsonc",
+					"yaml",
+					"toml",
+					"xml",
+
 					-- Documentation
-					"markdown", "markdown_inline", 
-					
+					"markdown",
+					"markdown_inline",
+
 					-- Backend languages you might use
-					"python", "go", "rust", "php",
-					
+					"python",
+					"go",
+					"rust",
+					"php",
+
 					-- Config files
-					"dockerfile", "nginx", "gitignore", "gitcommit",
-					
+					"dockerfile",
+					"nginx",
+					"gitignore",
+					"gitcommit",
+
 					-- Shell scripting
 					"bash",
-					
+
 					-- Other useful ones
-					"regex", "sql", "graphql",
-					
+					"regex",
+					"sql",
+					"graphql",
+
 					-- Systems programming (optional)
-					"c", "cpp", "java",
+					"c",
+					"cpp",
+					"java",
 				},
 
 				sync_install = false,
 				auto_install = true,
-				
+
 				ignore_install = {},
 
 				highlight = {
@@ -83,35 +107,35 @@ return {
 							-- Functions
 							["af"] = "@function.outer",
 							["if"] = "@function.inner",
-							
+
 							-- Classes
 							["ac"] = "@class.outer",
 							["ic"] = "@class.inner",
-							
+
 							-- Parameters/arguments
 							["aa"] = "@parameter.outer",
 							["ia"] = "@parameter.inner",
-							
+
 							-- Conditionals
 							["ai"] = "@conditional.outer",
 							["ii"] = "@conditional.inner",
-							
+
 							-- Loops
 							["al"] = "@loop.outer",
 							["il"] = "@loop.inner",
-							
+
 							-- Comments
 							["aC"] = "@comment.outer",
 							["iC"] = "@comment.inner",
-							
+
 							-- Blocks
 							["ab"] = "@block.outer",
 							["ib"] = "@block.inner",
 						},
 						selection_modes = {
-							['@parameter.outer'] = 'v',
-							['@function.outer'] = 'V',
-							['@class.outer'] = '<c-v>',
+							["@parameter.outer"] = "v",
+							["@function.outer"] = "V",
+							["@class.outer"] = "<c-v>",
 						},
 					},
 					move = {
@@ -154,19 +178,19 @@ return {
 			-- Override the treesitter attach to prevent errors
 			local ts_config = require("nvim-treesitter.configs")
 			local original_attach = ts_config.attach_module
-			
+
 			ts_config.attach_module = function(module, bufnr)
 				local lang = vim.treesitter.language.get_lang(vim.bo[bufnr].filetype)
 				local problematic_langs = {
 					-- Add any languages that cause issues on your system
 				}
-				
+
 				for _, p_lang in ipairs(problematic_langs) do
 					if lang == p_lang then
 						return
 					end
 				end
-				
+
 				local success, err = pcall(original_attach, module, bufnr)
 				if not success then
 					return
@@ -202,16 +226,33 @@ return {
 			-- Enhanced web development support
 			local function enable_treesitter_for_web()
 				local web_filetypes = {
-					"html", "css", "scss", "less", "sass",
-					"javascript", "typescript", "jsx", "tsx",
-					"javascriptreact", "typescriptreact",
-					"vue", "svelte", "astro", "mdx",
+					"html",
+					"css",
+					"scss",
+					"less",
+					"sass",
+					"javascript",
+					"typescript",
+					"jsx",
+					"tsx",
+					"javascriptreact",
+					"typescriptreact",
+					"vue",
+					"svelte",
+					"astro",
+					"mdx",
+					"ejs",
 				}
-				
+
 				for _, ft in ipairs(web_filetypes) do
 					vim.api.nvim_create_autocmd("FileType", {
 						pattern = ft,
 						callback = function(args)
+							if ft == "ejs" then
+								vim.bo[args.buf].filetype = "html"
+								vim.bo[args.buf].syntax = "html"
+								return
+							end
 							local success, _ = pcall(vim.treesitter.start, args.buf)
 							if not success then
 								vim.bo[args.buf].syntax = ft
@@ -224,12 +265,23 @@ return {
 
 			local function disable_treesitter_for_web()
 				local web_filetypes = {
-					"html", "css", "scss", "less", "sass",
-					"javascript", "typescript", "jsx", "tsx",
-					"javascriptreact", "typescriptreact",
-					"vue", "svelte", "astro", "mdx",
+					"html",
+					"css",
+					"scss",
+					"less",
+					"sass",
+					"javascript",
+					"typescript",
+					"jsx",
+					"tsx",
+					"javascriptreact",
+					"typescriptreact",
+					"vue",
+					"svelte",
+					"astro",
+					"mdx",
 				}
-				
+
 				for _, ft in ipairs(web_filetypes) do
 					vim.api.nvim_create_autocmd("FileType", {
 						pattern = ft,
@@ -246,9 +298,14 @@ return {
 			enable_treesitter_for_web()
 
 			-- Keybindings
-			vim.keymap.set('n', '<F12>', toggle_treesitter_errors, { desc = 'Toggle diagnostic messages' })
-			vim.keymap.set('n', '<leader>te', enable_treesitter_for_web, { desc = 'Enable Tree-sitter for web files' })
-			vim.keymap.set('n', '<leader>td', disable_treesitter_for_web, { desc = 'Disable Tree-sitter for web files' })
+			vim.keymap.set("n", "<F12>", toggle_treesitter_errors, { desc = "Toggle diagnostic messages" })
+			vim.keymap.set("n", "<leader>te", enable_treesitter_for_web, { desc = "Enable Tree-sitter for web files" })
+			vim.keymap.set(
+				"n",
+				"<leader>td",
+				disable_treesitter_for_web,
+				{ desc = "Disable Tree-sitter for web files" }
+			)
 		end,
 	},
 
@@ -258,7 +315,7 @@ return {
 		event = { "BufReadPost", "BufNewFile" },
 		dependencies = { "nvim-treesitter/nvim-treesitter" },
 		config = function()
-			require('nvim-ts-autotag').setup({
+			require("nvim-ts-autotag").setup({
 				opts = {
 					enable_close = true,
 					enable_rename = true,
@@ -267,6 +324,7 @@ return {
 				per_filetype = {
 					["html"] = { enable_close = true },
 					["xml"] = { enable_close = true },
+					["ejs"] = { enable_close = true },
 					["javascript"] = { enable_close = true },
 					["typescript"] = { enable_close = true },
 					["javascriptreact"] = { enable_close = true },
@@ -277,9 +335,9 @@ return {
 					["svelte"] = { enable_close = true },
 					["astro"] = { enable_close = true },
 					["php"] = { enable_close = true },
-				}
+				},
 			})
-		end
+		end,
 	},
 
 	-- Additional useful treesitter plugins for web development
@@ -288,17 +346,17 @@ return {
 		event = { "BufReadPost", "BufNewFile" },
 		dependencies = { "nvim-treesitter/nvim-treesitter" },
 		config = function()
-			require('ts_context_commentstring').setup({
+			require("ts_context_commentstring").setup({
 				enable_autocmd = false,
 			})
-			
+
 			-- Integration with Comment.nvim if you use it
 			local get_option = vim.filetype.get_option
 			vim.filetype.get_option = function(filetype, option)
 				return option == "commentstring"
-					and require("ts_context_commentstring.internal").calculate_commentstring()
+						and require("ts_context_commentstring.internal").calculate_commentstring()
 					or get_option(filetype, option)
 			end
-		end
+		end,
 	},
 }
