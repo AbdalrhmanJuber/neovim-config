@@ -144,6 +144,16 @@ return {
 			local capabilities = require("cmp_nvim_lsp").default_capabilities()
 			local mason_path = vim.fn.stdpath("data") .. "/mason/bin/"
 
+			-- Disable default commands to prevent system LSP servers from starting
+			for _, server_name in ipairs({
+				"html", "emmet_ls", "tailwindcss", "cssls", "ts_ls", "eslint",
+				"lua_ls", "jsonls", "pyright", "clangd", "bashls"
+			}) do
+				if lspconfig[server_name] and lspconfig[server_name].document_config then
+					lspconfig[server_name].document_config.default_config.cmd = nil
+				end
+			end
+
 			local on_attach = function(client, bufnr)
 				local bufopts = { noremap = true, silent = true, buffer = bufnr }
 				vim.keymap.set("n", "gD", vim.lsp.buf.declaration, bufopts)
@@ -162,189 +172,157 @@ return {
 				end
 			end
 
-			-- HTML Server
-			lspconfig.html.setup({
-				capabilities = capabilities,
-				on_attach = on_attach,
-				cmd = { mason_path .. "vscode-html-language-server.CMD", "--stdio" },
-				settings = {
-					html = {
-						format = { enable = false },
-						hover = { documentation = false },
-					},
-				},
-				root_dir = lspconfig.util.root_pattern("package.json", ".git", vim.fn.getcwd()),
-			})
-
-			-- Emmet Server
-			lspconfig.emmet_ls.setup({
-				capabilities = capabilities,
-				on_attach = on_attach,
-				cmd = { mason_path .. "emmet-ls.CMD", "--stdio" },
-				filetypes = { "html", "css", "javascript", "javascriptreact", "typescriptreact", "vue" },
-				init_options = {
-					html = { options = { ["bem.enabled"] = true } },
-				},
-				root_dir = lspconfig.util.root_pattern("package.json", ".git", vim.fn.getcwd()),
-			})
-
-			-- Tailwind Server
-			lspconfig.tailwindcss.setup({
-				capabilities = capabilities,
-				on_attach = on_attach,
-				cmd = { mason_path .. "tailwindcss-language-server.CMD", "--stdio" },
-				filetypes = { "html", "css", "javascript", "javascriptreact", "typescriptreact" },
-				root_dir = lspconfig.util.root_pattern(
-					"tailwind.config.js",
-					"tailwind.config.ts",
-					"postcss.config.js",
-					"postcss.config.ts",
-					"package.json",
-					".git",
-					vim.fn.getcwd()
-				),
-			})
-
-			-- CSS Server
-			lspconfig.cssls.setup({
-				capabilities = capabilities,
-				on_attach = on_attach,
-				cmd = { mason_path .. "vscode-css-language-server.CMD", "--stdio" },
-				settings = {
-					css = { validate = true, lint = { unknownAtRules = "ignore" } },
-					scss = { validate = true, lint = { unknownAtRules = "ignore" } },
-					less = { validate = true, lint = { unknownAtRules = "ignore" } },
-				},
-				filetypes = { "css", "scss", "less", "sass" },
-			})
-
-			-- TypeScript/JavaScript Server
-lspconfig.ts_ls.setup({
-  capabilities = capabilities,
-  on_attach = on_attach,
-  -- Force only Mason's ts_ls, not system typescript-language-server
-  cmd = { mason_path .. "typescript-language-server.CMD", "--stdio" },
-  -- Prevent multiple instances
-  single_file_support = true,
-  root_dir = lspconfig.util.root_pattern(
-    "package.json",
-    "tsconfig.json",
-    "jsconfig.json",
-    ".git",
-    vim.fn.getcwd()
-  ),
-  settings = {
-    typescript = {
-      inlayHints = {
-        includeInlayParameterNameHints = "all",
-        includeInlayParameterNameHintsWhenArgumentMatchesName = false,
-        includeInlayFunctionParameterTypeHints = true,
-        includeInlayVariableTypeHints = true,
-        includeInlayPropertyDeclarationTypeHints = true,
-        includeInlayFunctionLikeReturnTypeHints = true,
-        includeInlayEnumMemberValueHints = true,
-      },
-    },
-    javascript = {
-      inlayHints = {
-        includeInlayParameterNameHints = "all",
-        includeInlayParameterNameHintsWhenArgumentMatchesName = false,
-        includeInlayFunctionParameterTypeHints = true,
-        includeInlayVariableTypeHints = true,
-        includeInlayPropertyDeclarationTypeHints = true,
-        includeInlayFunctionLikeReturnTypeHints = true,
-        includeInlayEnumMemberValueHints = true,
-      },
-    },
-  },
-})
-			-- ESLint Server
-			lspconfig.eslint.setup({
-				capabilities = capabilities,
-				cmd = { mason_path .. "vscode-eslint-language-server.CMD", "--stdio" },
-				on_attach = function(client, bufnr)
-					on_attach(client, bufnr)
-					vim.api.nvim_create_autocmd("BufWritePre", {
-						buffer = bufnr,
-						command = "EslintFixAll",
-					})
-				end,
-				settings = {
-					codeAction = {
-						disableRuleComment = { enable = true, location = "separateLine" },
-						showDocumentation = { enable = true },
-					},
-					codeActionOnSave = { enable = false, mode = "all" },
-					experimental = { useFlatConfig = false },
-					format = true,
-					run = "onType",
-					validate = "on",
-					workingDirectory = { mode = "location" },
-				},
-			})
-
-			-- Lua Server
-			lspconfig.lua_ls.setup({
-				capabilities = capabilities,
-				on_attach = on_attach,
-				cmd = { mason_path .. "lua-language-server.CMD" },
-				settings = {
-					Lua = {
-						runtime = { version = "LuaJIT" },
-						diagnostics = { globals = { "vim" } },
-						workspace = {
-							library = vim.api.nvim_get_runtime_file("", true),
-							checkThirdParty = false,
+			-- Server configurations table for better maintainability
+			local servers = {
+				html = {
+					cmd = { mason_path .. "vscode-html-language-server.CMD", "--stdio" },
+					settings = {
+						html = {
+							format = { enable = false },
+							hover = { documentation = false },
 						},
-						telemetry = { enable = false },
+					},
+					root_dir = lspconfig.util.root_pattern("package.json", ".git", vim.fn.getcwd()),
+				},
+				emmet_ls = {
+					cmd = { mason_path .. "emmet-ls.CMD", "--stdio" },
+					filetypes = { "html", "css", "javascript", "javascriptreact", "typescriptreact", "vue" },
+					init_options = {
+						html = { options = { ["bem.enabled"] = true } },
+					},
+					root_dir = lspconfig.util.root_pattern("package.json", ".git", vim.fn.getcwd()),
+				},
+				tailwindcss = {
+					cmd = { mason_path .. "tailwindcss-language-server.CMD", "--stdio" },
+					filetypes = { "html", "css", "javascript", "javascriptreact", "typescriptreact" },
+					root_dir = lspconfig.util.root_pattern(
+						"tailwind.config.js",
+						"tailwind.config.ts",
+						"postcss.config.js",
+						"postcss.config.ts",
+						"package.json",
+						".git",
+						vim.fn.getcwd()
+					),
+				},
+				cssls = {
+					cmd = { mason_path .. "vscode-css-language-server.CMD", "--stdio" },
+					settings = {
+						css = { validate = true, lint = { unknownAtRules = "ignore" } },
+						scss = { validate = true, lint = { unknownAtRules = "ignore" } },
+						less = { validate = true, lint = { unknownAtRules = "ignore" } },
+					},
+					filetypes = { "css", "scss", "less", "sass" },
+				},
+				ts_ls = {
+					cmd = { mason_path .. "typescript-language-server.CMD", "--stdio" },
+					single_file_support = true,
+					root_dir = lspconfig.util.root_pattern(
+						"package.json",
+						"tsconfig.json",
+						"jsconfig.json",
+						".git",
+						vim.fn.getcwd()
+					),
+					settings = {
+						typescript = {
+							inlayHints = {
+								includeInlayParameterNameHints = "all",
+								includeInlayParameterNameHintsWhenArgumentMatchesName = false,
+								includeInlayFunctionParameterTypeHints = true,
+								includeInlayVariableTypeHints = true,
+								includeInlayPropertyDeclarationTypeHints = true,
+								includeInlayFunctionLikeReturnTypeHints = true,
+								includeInlayEnumMemberValueHints = true,
+							},
+						},
+						javascript = {
+							inlayHints = {
+								includeInlayParameterNameHints = "all",
+								includeInlayParameterNameHintsWhenArgumentMatchesName = false,
+								includeInlayFunctionParameterTypeHints = true,
+								includeInlayVariableTypeHints = true,
+								includeInlayPropertyDeclarationTypeHints = true,
+								includeInlayFunctionLikeReturnTypeHints = true,
+								includeInlayEnumMemberValueHints = true,
+							},
+						},
 					},
 				},
-			})
-
-			-- JSON Server
-			lspconfig.jsonls.setup({
-				capabilities = capabilities,
-				on_attach = on_attach,
-				cmd = { mason_path .. "vscode-json-language-server.CMD", "--stdio" },
-			})
-
-			-- Python Server
-			lspconfig.pyright.setup({
-				capabilities = capabilities,
-				on_attach = on_attach,
-				cmd = { mason_path .. "pyright-langserver.CMD", "--stdio" },
-			})
-
-			-- C/C++ Server
-			lspconfig.clangd.setup({
-				capabilities = capabilities,
-				on_attach = on_attach,
-				-- Force only Mason's clangd, not system clangd
-				cmd = { mason_path .. "clangd.CMD" },
-				-- Add flags to prevent conflicts
-				init_options = {
-					clangdFileStatus = true,
-					usePlaceholders = true,
-					completeUnimported = true,
+				eslint = {
+					cmd = { mason_path .. "vscode-eslint-language-server.CMD", "--stdio" },
+					on_attach = function(client, bufnr)
+						on_attach(client, bufnr)
+						vim.api.nvim_create_autocmd("BufWritePre", {
+							buffer = bufnr,
+							command = "EslintFixAll",
+						})
+					end,
+					settings = {
+						codeAction = {
+							disableRuleComment = { enable = true, location = "separateLine" },
+							showDocumentation = { enable = true },
+						},
+						codeActionOnSave = { enable = false, mode = "all" },
+						experimental = { useFlatConfig = false },
+						format = true,
+						run = "onType",
+						validate = "on",
+						workingDirectory = { mode = "location" },
+					},
 				},
-				-- Prevent multiple instances
-				single_file_support = true,
-				root_dir = lspconfig.util.root_pattern(
-					"compile_commands.json",
-					"compile_flags.txt",
-					".clangd",
-					".git",
-					"CMakeLists.txt",
-					"Makefile"
-				),
-			})
+				lua_ls = {
+					cmd = { mason_path .. "lua-language-server.CMD" },
+					settings = {
+						Lua = {
+							runtime = { version = "LuaJIT" },
+							diagnostics = { globals = { "vim" } },
+							workspace = {
+								library = vim.api.nvim_get_runtime_file("", true),
+								checkThirdParty = false,
+							},
+							telemetry = { enable = false },
+						},
+					},
+				},
+				jsonls = {
+					cmd = { mason_path .. "vscode-json-language-server.CMD", "--stdio" },
+				},
+				pyright = {
+					cmd = { mason_path .. "pyright-langserver.CMD", "--stdio" },
+				},
+				clangd = {
+					cmd = { mason_path .. "clangd.CMD" },
+					init_options = {
+						clangdFileStatus = true,
+						usePlaceholders = true,
+						completeUnimported = true,
+					},
+					single_file_support = true,
+					root_dir = lspconfig.util.root_pattern(
+						"compile_commands.json",
+						"compile_flags.txt",
+						".clangd",
+						".git",
+						"CMakeLists.txt",
+						"Makefile"
+					),
+				},
+				bashls = {
+					cmd = { mason_path .. "bash-language-server.CMD", "start" },
+				},
+			}
 
-			-- Bash Server
-			lspconfig.bashls.setup({
-				capabilities = capabilities,
-				on_attach = on_attach,
-				cmd = { mason_path .. "bash-language-server.CMD", "start" },
-			})
+			-- Setup all servers using the configuration table
+			for server_name, config in pairs(servers) do
+				-- Ensure each server uses Mason's installation and our common settings
+				local server_config = vim.tbl_deep_extend("force", {
+					capabilities = capabilities,
+					on_attach = config.on_attach or on_attach,
+				}, config)
+				
+				lspconfig[server_name].setup(server_config)
+			end
 
 			-- Diagnostics and UI
 			vim.diagnostic.config({
