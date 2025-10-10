@@ -28,19 +28,6 @@ return {
 				},
 			})
 
-			-- Add custom rule for angle brackets
-			local Rule = require("nvim-autopairs.rule")
-			autopairs.add_rules({
-				Rule("<", ">"):with_pair(function(opts)
-					-- Only auto-close in specific contexts where it makes sense
-					local line = opts.line
-					local col = opts.col
-					local char = line:sub(col - 1, col - 1)
-					-- Avoid auto-closing after certain characters
-					return not vim.tbl_contains({ "=", "<", ">" }, char)
-				end),
-			})
-
 			-- Integration with nvim-cmp if you're using it
 			local cmp_autopairs = require("nvim-autopairs.completion.cmp")
 			local cmp = require("cmp")

@@ -71,6 +71,8 @@ return {
 					"c",
 					"cpp",
 					"java",
+	-- Hardware description languages
+					"verilog", -- Supports both Verilog and SystemVerilog
 				},
 
 				sync_install = false,

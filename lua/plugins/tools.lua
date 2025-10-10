@@ -39,7 +39,7 @@ return {
 				silent = true,
 			})
 
-			-- Filetypes (all off by default, selectively enabled later)
+			-- Filetypes (all off by default, selectively enabled later) 
 			vim.g.copilot_filetypes = {
 				["*"] = false,
 				javascript = true,
