@@ -40,7 +40,7 @@ return {
 					"bashls",
 					"yamlls",
 					"angularls", -- ADD ANGULAR LANGUAGE SERVER
-					"verible", -- ADD THIS for Verilog/SystemVerilog
+					"svlangserver", -- ADD THIS for Verilog/SystemVerilog
 				},
 				automatic_installation = false,
 			})
@@ -175,7 +175,7 @@ return {
 					yamlls = "yaml-language-server.CMD",
 					angularls = "ngserver.CMD", -- ADD ANGULAR COMMAND MAPPING
 
-					verible = "verible-verilog-ls.CMD", -- ADD THIS
+					svlangserver = "svlangserver.CMD",
 				}
 				return mason_path .. cmd_map[server_name]
 			end
@@ -246,8 +246,8 @@ return {
 			-- MANUAL LSP SETUP WITH FORCED MASON COMMANDS
 			local servers = {
 
-				verible = {
-					cmd = { get_mason_cmd("verible") },
+			svlangserver = {
+					cmd = { get_mason_cmd("svlangserver") },
 					filetypes = { "verilog", "systemverilog" },
 					root_dir = lspconfig.util.root_pattern(".git", vim.fn.getcwd()),
 					single_file_support = true,
