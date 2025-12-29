@@ -41,6 +41,8 @@ return {
 					"yamlls",
 					"angularls", -- ADD ANGULAR LANGUAGE SERVER
 					"svlangserver", -- ADD THIS for Verilog/SystemVerilog
+					-- PHP / Laravel
+					"intelephense",
 				},
 				automatic_installation = false,
 			})
@@ -176,6 +178,9 @@ return {
 					angularls = "ngserver.CMD", -- ADD ANGULAR COMMAND MAPPING
 
 					svlangserver = "svlangserver.CMD",
+
+					-- PHP
+					intelephense = "intelephense.cmd",
 				}
 				return mason_path .. cmd_map[server_name]
 			end
@@ -245,8 +250,24 @@ return {
 
 			-- MANUAL LSP SETUP WITH FORCED MASON COMMANDS
 			local servers = {
-
-			svlangserver = {
+				intelephense = {
+					cmd = { get_mason_cmd("intelephense"), "--stdio" },
+					filetypes = { "php", "blade"},
+					root_dir = lspconfig.util.root_pattern("composer.json", ".git", "artisan"),
+					settings = {
+						intelephense = {
+							environment = {
+								includePaths = {
+									"vendor",
+								},
+							},
+							files = {
+								maxSize = 5000000,
+							},
+						},
+					},
+				},
+				svlangserver = {
 					cmd = { get_mason_cmd("svlangserver") },
 					filetypes = { "verilog", "systemverilog" },
 					root_dir = lspconfig.util.root_pattern(".git", vim.fn.getcwd()),

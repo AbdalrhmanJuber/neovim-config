@@ -16,3 +16,10 @@ vim.api.nvim_create_autocmd({"BufRead", "BufNewFile"}, {
     vim.bo.omnifunc = "htmlcomplete#CompleteTags"
   end,
 })
+
+vim.api.nvim_create_autocmd({ "BufRead", "BufNewFile" }, {
+	pattern = "*.blade.php",
+	callback = function()
+		vim.bo.filetype = "blade"
+	end,
+})

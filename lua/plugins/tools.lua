@@ -27,19 +27,21 @@ return {
 				silent = true,
 			})
 			vim.keymap.set("n", "<leader>ct", function()
-				if vim.g.copilot_enabled == false then
-					vim.cmd("Copilot enable")
-					print("Copilot enabled")
-				else
+				local enabled = vim.fn["copilot#Enabled"]() == 1
+
+				if enabled then
 					vim.cmd("Copilot disable")
 					print("Copilot disabled")
+				else
+					vim.cmd("Copilot enable")
+					print("Copilot enabled")
 				end
 			end, {
 				desc = "Toggle Copilot",
 				silent = true,
 			})
 
-			-- Filetypes (all off by default, selectively enabled later) 
+			-- Filetypes (all off by default, selectively enabled later)
 			vim.g.copilot_filetypes = {
 				["*"] = false,
 				javascript = true,
@@ -75,7 +77,7 @@ return {
 			{
 				"<leader>f",
 				function()
-					require("conform").format({ lsp_fallback = true })
+					require("conform").format({ lsp_fallback = false })
 				end,
 				desc = "[F]ormat file",
 			},
@@ -91,9 +93,33 @@ return {
 				markdown = { "prettier" },
 				lua = { "stylua" },
 				python = { "black" },
+
+				-- ✅ Laravel
+				php = { "php_cs_fixer" },
+				blade = { "blade_formatter" },
 				cpp = { "clang_format" },
 				c = { "clang_format" },
 				["*"] = { "trim_whitespace" },
+			},
+			formatters = {
+				blade_formatter = {
+					command = "blade-formatter",
+					args = {
+						"--stdin"
+					},
+					stdin = true,
+				},
+
+				php_cs_fixer = {
+					command = "php-cs-fixer",
+					args = {
+						"fix",
+						"--using-cache=no",
+						"--quiet",
+						"$FILENAME",
+					},
+					stdin = false,
+				},
 			},
 		},
 	},

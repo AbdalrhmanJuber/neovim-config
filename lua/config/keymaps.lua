@@ -1,5 +1,6 @@
 -- All keymaps in one place
-
+vim.g.mapleader = " "
+vim.g.maplocalleader = " "
 -- Custom text object keymaps
 vim.keymap.set("n", "t", function()
 	local char = vim.fn.getcharstr()
@@ -37,15 +38,12 @@ end)
 -- LSP and formatting keymaps (global)
 vim.keymap.set("n", "<leader>ca", vim.lsp.buf.code_action, { desc = "Code actions" })
 
-vim.keymap.set("n", "<leader>ks", function()
-	os.execute("taskkill /IM node.exe /F")
-end, { desc = "Kill all Node.js processes (e.g., live-server)" })
 
 vim.keymap.set("n", "<leader>tp", function()
-	local file_dir = vim.fn.expand("%:p:h")
-	local cmd = string.format('wt -w 0 sp -p "PowerShell" -d "%s"', file_dir)
-	os.execute(cmd)
-end, { desc = "Open PowerShell 7 vertical split pane in Windows Terminal" })
+  local file_dir = vim.fn.expand("%:p:h")
+  local cmd = string.format('wt -w 0 sp -H -p "PowerShell" -d "%s"', file_dir)
+  os.execute(cmd)
+end, { desc = "Open PowerShell 7 horizontal split pane in Windows Terminal" })
 
 vim.keymap.set("n", "<leader>sr", function()
 	local old = vim.fn.input("Find: ")
@@ -55,7 +53,7 @@ vim.keymap.set("n", "<leader>sr", function()
 	local new = vim.fn.input("Replace with: ")
 
 	-- File types to search
-	local file_pattern = "**/*.{html,css,js}"
+	local file_pattern = "**/*.{html,css,js,ts}"
 	local files = vim.fn.glob(file_pattern, 0, 1)
 
 	local filtered_files = {}

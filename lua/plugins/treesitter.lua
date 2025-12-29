@@ -71,7 +71,7 @@ return {
 					"c",
 					"cpp",
 					"java",
-	-- Hardware description languages
+					-- Hardware description languages
 					"verilog", -- Supports both Verilog and SystemVerilog
 				},
 
@@ -244,6 +244,7 @@ return {
 					"astro",
 					"mdx",
 					"ejs",
+					"blade",
 				}
 
 				for _, ft in ipairs(web_filetypes) do
@@ -296,6 +297,16 @@ return {
 				print("Treesitter disabled for web development")
 			end
 
+			-- Blade (Laravel) support
+			vim.api.nvim_create_autocmd({ "BufRead", "BufNewFile" }, {
+				pattern = "*.blade.php",
+				callback = function(args)
+					vim.bo[args.buf].filetype = "blade"
+					-- Blade uses HTML + PHP treesitter
+					pcall(vim.treesitter.start, args.buf, "html")
+				end,
+			})
+
 			-- Enable web languages on startup
 			enable_treesitter_for_web()
 
@@ -336,6 +347,7 @@ return {
 					["vue"] = { enable_close = true },
 					["svelte"] = { enable_close = true },
 					["astro"] = { enable_close = true },
+					["blade"] = { enable_close = true },
 					["php"] = { enable_close = true },
 				},
 			})
