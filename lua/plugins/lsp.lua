@@ -33,61 +33,8 @@ return {
 					"tailwindcss",
 					"jsonls",
 				},
-			})
-		end,
-	},
-
-	-- =========================
-	-- Completion Engine
-	-- =========================
-	{
-		"hrsh7th/nvim-cmp",
-		event = "InsertEnter",
-		dependencies = {
-			"hrsh7th/cmp-nvim-lsp",
-			"hrsh7th/cmp-buffer",
-			"hrsh7th/cmp-path",
-			"L3MON4D3/LuaSnip",
-			"saadparwaiz1/cmp_luasnip",
-			"onsails/lspkind-nvim",
-		},
-		config = function()
-			local cmp = require("cmp")
-			local luasnip = require("luasnip")
-			local lspkind = require("lspkind")
-
-			cmp.setup({
-				snippet = {
-					expand = function(args)
-						luasnip.lsp_expand(args.body)
-					end,
-				},
-				mapping = cmp.mapping.preset.insert({
-					["<C-b>"] = cmp.mapping.scroll_docs(-4),
-					["<C-f>"] = cmp.mapping.scroll_docs(4),
-					["<C-Space>"] = cmp.mapping.complete(),
-					["<C-e>"] = cmp.mapping.abort(),
-					["<CR>"] = cmp.mapping.confirm({ select = true }),
-					["<Tab>"] = cmp.mapping.select_next_item(),
-					["<S-Tab>"] = cmp.mapping.select_prev_item(),
-				}),
-				sources = cmp.config.sources({
-					{ name = "nvim_lsp", priority = 1000 },
-					{ name = "luasnip", priority = 750 },
-					{ name = "buffer", priority = 500 },
-					{ name = "path", priority = 250 },
-				}),
-				formatting = {
-					format = lspkind.cmp_format({ 
-						mode = "symbol_text",
-						maxwidth = 50,
-						ellipsis_char = "...",
-					}),
-				},
-				window = {
-					completion = cmp.config.window.bordered(),
-					documentation = cmp.config.window.bordered(),
-				},
+				-- Disable auto-enable: we configure servers manually in nvim-lspconfig below
+				automatic_enable = false,
 			})
 		end,
 	},
@@ -138,7 +85,8 @@ return {
 			-- =========================
 
 			lspconfig.lua_ls.setup({
-			cmd = { cmd("lua-language-server.cmd") },
+				cmd = { cmd("lua-language-server.cmd") },
+				capabilities = capabilities,
 				on_attach = on_attach,
 				settings = {
 					Lua = {
@@ -268,13 +216,14 @@ return {
 	})
 
 			lspconfig.clangd.setup({
-				cmd = { cmd("clangd") },
+				cmd = { cmd("clangd.cmd") },
 				capabilities = capabilities,
 				on_attach = on_attach,
 			})
 
 			lspconfig.bashls.setup({
-			cmd = { cmd("bash-language-server.cmd"), "start" },
+				cmd = { cmd("bash-language-server.cmd"), "start" },
+				capabilities = capabilities,
 				on_attach = on_attach,
 			})
 
@@ -312,7 +261,7 @@ return {
 			})
 
 			lspconfig.svlangserver.setup({
-				cmd = { cmd("svlangserver") },
+				cmd = { cmd("svlangserver.cmd") },
 				capabilities = capabilities,
 				on_attach = on_attach,
 				filetypes = { "verilog", "systemverilog" },
