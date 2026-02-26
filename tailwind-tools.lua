@@ -7,5 +7,17 @@ return {
     "nvim-telescope/telescope.nvim", -- optional
     "neovim/nvim-lspconfig", -- optional
   },
-  opts = {} -- your configuration
+  opts = {
+    document_color = {
+      enabled = true,
+      kind = "inline",
+      inline_symbol = "󰝤 ",
+      debounce = 200,
+    },
+    conceal = {
+      enabled = false,
+      symbol = "󱏿",
+    },
+    custom_filetypes = { "vue" }
+  }
 }

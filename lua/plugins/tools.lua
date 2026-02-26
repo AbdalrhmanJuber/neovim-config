@@ -65,7 +65,7 @@ return {
 	-- Emmet
 	{
 		"mattn/emmet-vim",
-		ft = { "html", "css", "javascript", "typescript", "javascriptreact", "typescriptreact" },
+		ft = { "html", "css", "javascript", "typescript", "javascriptreact", "typescriptreact", "vue", "blade" },
 	},
 
 	-- Formatter
@@ -77,12 +77,19 @@ return {
 			{
 				"<leader>f",
 				function()
-					require("conform").format({ lsp_fallback = false })
+					require("conform").format({ 
+						lsp_fallback = false,
+						timeout_ms = 3000,
+					})
 				end,
 				desc = "[F]ormat file",
 			},
 		},
 		opts = {
+			format_on_save = {
+				timeout_ms = 3000,
+				lsp_fallback = false,
+			},
 			formatters_by_ft = {
 				html = { "prettier" },
 				css = { "prettier" },
@@ -99,6 +106,7 @@ return {
 				blade = { "blade_formatter" },
 				cpp = { "clang_format" },
 				c = { "clang_format" },
+				vue = { "prettier" },
 				["*"] = { "trim_whitespace" },
 			},
 			formatters = {
@@ -127,7 +135,7 @@ return {
 	-- Tailwind tools
 	{
 		"luckasRanarison/tailwind-tools.nvim",
-		ft = { "html", "css", "javascript", "typescript", "javascriptreact", "typescriptreact" },
+		ft = { "html", "css","blade", "vue", "javascript", "typescript", "javascriptreact", "typescriptreact" },
 		config = function()
 			require("tailwind-tools").setup({
 				color_enabled = true,

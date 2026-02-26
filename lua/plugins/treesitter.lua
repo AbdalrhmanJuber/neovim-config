@@ -10,40 +10,33 @@ return {
 		config = function()
 			-- Windows compatibility settings
 			require("nvim-treesitter.install").prefer_git = false
-			require("nvim-treesitter.install").compilers = { "gcc", "clang", "cc" }
+			require("nvim-treesitter.install").compilers = { "zig", "gcc", "clang", "cc" }
 
 			require("nvim-treesitter.configs").setup({
 				-- Comprehensive web development parsers
+				-- Only install parsers for languages you actively use
 				ensure_installed = {
 					-- Core
 					"lua",
 					"vim",
 					"vimdoc",
-					"query",
 
-					-- Web fundamentals
+					-- Web essentials
 					"html",
 					"css",
-					"scss",
 					"javascript",
 					"typescript",
 					"tsx",
 
 					-- Web frameworks/libraries
 					"angular",
+					"vue",
 
 					-- Styling
 					"styled",
 
 					-- Data formats
 					"json",
-					"json5",
-					"jsonc",
-					"yaml",
-					"toml",
-					"xml",
-
-					-- Documentation
 					"markdown",
 					"markdown_inline",
 

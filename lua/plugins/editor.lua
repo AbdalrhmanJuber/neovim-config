@@ -35,27 +35,6 @@ return {
 		end,
 	},
 
-	-- Keep vim-polyglot as fallback for languages treesitter doesn't support
-	{
-		"sheerun/vim-polyglot",
-		event = { "BufReadPost", "BufNewFile" },
-		init = function()
-			-- Disable for languages that treesitter handles well
-			vim.g.polyglot_disabled = {
-				"lua",
-				"html",
-				"css",
-				"javascript",
-				"typescript",
-				"json",
-				"yaml",
-				"markdown",
-				"c",
-				"vim",
-			}
-		end,
-	},
-
 	-- Keep vim-closetag as backup for treesitter auto-tag
 	{
 		"alvan/vim-closetag",
@@ -185,7 +164,7 @@ return {
 		config = function()
 			require("auto-save").setup({
 				enabled = true,
-				debounce_delay = 1000,
+				debounce_delay = 1500, -- Increased from 1000ms
 				execution_message = {
 					message = function()
 						return ("AutoSave: " .. vim.fn.strftime("%H:%M:%S"))

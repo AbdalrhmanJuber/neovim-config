@@ -47,8 +47,7 @@ return {
 	},
 	{
 		"craftzdog/solarized-osaka.nvim",
-		priority = 1000,
-		lazy = false,
+		lazy = true,
 		config = function()
 			require("solarized-osaka").setup({
 				terminal_colors = true,

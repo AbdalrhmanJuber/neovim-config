@@ -9,8 +9,7 @@ return {
 	-- =========================
 	{
 		"williamboman/mason.nvim",
-		lazy = false,
-		priority = 1000,
+		cmd = "Mason",
 		config = function()
 			require("mason").setup()
 		end,
@@ -21,27 +20,18 @@ return {
 	-- =========================
 	{
 		"williamboman/mason-lspconfig.nvim",
-		lazy = false,
-		priority = 999,
+		event = { "BufReadPre", "BufNewFile" },
 		dependencies = { "williamboman/mason.nvim" },
 		config = function()
 			require("mason-lspconfig").setup({
+				-- Only install servers you actually use regularly
 				ensure_installed = {
 					"lua_ls",
 					"html",
 					"cssls",
-					"emmet_ls",
-					"tailwindcss",
 					"ts_ls",
-					"eslint",
+					"tailwindcss",
 					"jsonls",
-					"yamlls",
-					"clangd",
-					"bashls",
-					"pyright",
-					"angularls",
-					"svlangserver",
-					--"intelephense",
 				},
 			})
 		end,
@@ -73,18 +63,30 @@ return {
 					end,
 				},
 				mapping = cmp.mapping.preset.insert({
+					["<C-b>"] = cmp.mapping.scroll_docs(-4),
+					["<C-f>"] = cmp.mapping.scroll_docs(4),
+					["<C-Space>"] = cmp.mapping.complete(),
+					["<C-e>"] = cmp.mapping.abort(),
 					["<CR>"] = cmp.mapping.confirm({ select = true }),
 					["<Tab>"] = cmp.mapping.select_next_item(),
 					["<S-Tab>"] = cmp.mapping.select_prev_item(),
 				}),
-				sources = {
-					{ name = "nvim_lsp" },
-					{ name = "luasnip" },
-					{ name = "buffer" },
-					{ name = "path" },
-				},
+				sources = cmp.config.sources({
+					{ name = "nvim_lsp", priority = 1000 },
+					{ name = "luasnip", priority = 750 },
+					{ name = "buffer", priority = 500 },
+					{ name = "path", priority = 250 },
+				}),
 				formatting = {
-					format = lspkind.cmp_format({ mode = "symbol_text" }),
+					format = lspkind.cmp_format({ 
+						mode = "symbol_text",
+						maxwidth = 50,
+						ellipsis_char = "...",
+					}),
+				},
+				window = {
+					completion = cmp.config.window.bordered(),
+					documentation = cmp.config.window.bordered(),
 				},
 			})
 		end,
@@ -95,8 +97,7 @@ return {
 	-- =========================
 	{
 		"neovim/nvim-lspconfig",
-		lazy = false,
-
+		event = { "BufReadPre", "BufNewFile" },
 		dependencies = {
 			"hrsh7th/cmp-nvim-lsp",
 			"williamboman/mason-lspconfig.nvim",
@@ -137,8 +138,7 @@ return {
 			-- =========================
 
 			lspconfig.lua_ls.setup({
-				cmd = { cmd("lua-language-server") },
-				capabilities = capabilities,
+			cmd = { cmd("lua-language-server.cmd") },
 				on_attach = on_attach,
 				settings = {
 					Lua = {
@@ -150,7 +150,7 @@ return {
 			})
 
 			lspconfig.ts_ls.setup({
-				cmd = { cmd("typescript-language-server"), "--stdio" },
+				cmd = { cmd("typescript-language-server.cmd"), "--stdio" },
 				capabilities = capabilities,
 				on_attach = on_attach,
 				root_dir = util.root_pattern("package.json", "tsconfig.json", ".git"),
@@ -158,7 +158,7 @@ return {
 
 			lspconfig.angularls.setup({
 				cmd = {
-					cmd("ngserver"),
+					cmd("ngserver.cmd"),
 					"--stdio",
 					"--tsProbeLocations",
 					vim.fn.getcwd(),
@@ -172,53 +172,100 @@ return {
 			})
 
 			lspconfig.tailwindcss.setup({
-				cmd = { cmd("tailwindcss-language-server"), "--stdio" },
+				cmd = { cmd("tailwindcss-language-server.cmd"), "--stdio" },
 				capabilities = capabilities,
 				on_attach = on_attach,
-				root_dir = util.root_pattern(
-					"tailwind.config.js",
-					"tailwind.config.ts",
-					"postcss.config.js",
-					"package.json",
-					".git"
-				),
-			})
+			filetypes = { 
+				"html", 
+				"css", 
+				"scss", 
+				"javascript", 
+				"javascriptreact", 
+				"typescript", 
+				"typescriptreact",
+				"vue" 
+			},
+			root_dir = util.root_pattern(
+				"tailwind.config.js",
+				"tailwind.config.ts",
+				"postcss.config.js",
+				"package.json",
+				".git"
+			),
+			settings = {
+				tailwindCSS = {
+					validate = true,
+					lint = {
+						cssConflict = "warning",
+						invalidApply = "error",
+						invalidScreen = "error",
+						invalidVariant = "error",
+						invalidConfigPath = "error",
+						invalidTailwindDirective = "error",
+						recommendedVariantOrder = "warning",
+					},
+					classAttributes = { "class", "className", "classList", "ngClass" },
+					experimental = {
+						classRegex = {
+							{ "class:\\s*?[\"'`]([^\"'`]*).*?[\"'`]", "[\"'`]([^\"'`]*).*?[\"'`]" },
+							{ ":class=\"([^\"]*)", "([a-zA-Z0-9\\-:]+)" },
+						},
+					},
+				},
+			},
+		})
 
-			lspconfig.html.setup({
-				cmd = { cmd("vscode-html-language-server"), "--stdio" },
-				capabilities = capabilities,
-				on_attach = on_attach,
-			})
+		lspconfig.cssls.setup({
+			cmd = { cmd("vscode-css-language-server.cmd"), "--stdio" },
+			capabilities = capabilities,
+			on_attach = on_attach,
+		})
 
-			lspconfig.cssls.setup({
-				cmd = { cmd("vscode-css-language-server"), "--stdio" },
-				capabilities = capabilities,
-				on_attach = on_attach,
-			})
+		lspconfig.emmet_ls.setup({
+			cmd = { cmd("emmet-ls.cmd"), "--stdio" },
+			capabilities = capabilities,
+			on_attach = on_attach,
+			filetypes = { 
+				"html", 
+				"css", 
+				"scss", 
+				"javascript", 
+				"javascriptreact", 
+				"typescript", 
+				"typescriptreact",
+				"vue" 
+			},
+		})
 
-			lspconfig.emmet_ls.setup({
-				cmd = { cmd("emmet-ls"), "--stdio" },
-				capabilities = capabilities,
-				on_attach = on_attach,
-			})
+		lspconfig.jsonls.setup({
+			cmd = { cmd("vscode-json-language-server.cmd"), "--stdio" },
+			capabilities = capabilities,
+			on_attach = on_attach,
+		})
+		lspconfig.yamlls.setup({
+			cmd = { cmd("yaml-language-server.cmd"), "--stdio" },
+			capabilities = capabilities,
+			on_attach = on_attach,
+	})
 
-			lspconfig.jsonls.setup({
-				cmd = { cmd("vscode-json-language-server"), "--stdio" },
-				capabilities = capabilities,
-				on_attach = on_attach,
-			})
-
-			lspconfig.yamlls.setup({
-				cmd = { cmd("yaml-language-server"), "--stdio" },
-				capabilities = capabilities,
-				on_attach = on_attach,
-			})
-
-			lspconfig.eslint.setup({
-				cmd = { cmd("vscode-eslint-language-server"), "--stdio" },
-				capabilities = capabilities,
-				on_attach = on_attach,
-			})
+	lspconfig.eslint.setup({
+		cmd = { cmd("vscode-eslint-language-server.cmd"), "--stdio" },
+		capabilities = capabilities,
+		on_attach = on_attach,
+		root_dir = util.root_pattern(
+			".eslintrc",
+			".eslintrc.js",
+			".eslintrc.cjs",
+			".eslintrc.yaml",
+			".eslintrc.yml",
+			".eslintrc.json",
+			"eslint.config.js",
+			"package.json"
+		),
+		settings = {
+			workingDirectory = { mode = "auto" },
+		},
+	})
 
 			lspconfig.clangd.setup({
 				cmd = { cmd("clangd") },
@@ -227,13 +274,12 @@ return {
 			})
 
 			lspconfig.bashls.setup({
-				cmd = { cmd("bash-language-server"), "start" },
-				capabilities = capabilities,
+			cmd = { cmd("bash-language-server.cmd"), "start" },
 				on_attach = on_attach,
 			})
 
 			lspconfig.pyright.setup({
-				cmd = { cmd("pyright-langserver"), "--stdio" },
+				cmd = { cmd("pyright-langserver.cmd"), "--stdio" },
 				capabilities = capabilities,
 				on_attach = on_attach,
 			})
@@ -270,6 +316,20 @@ return {
 				capabilities = capabilities,
 				on_attach = on_attach,
 				filetypes = { "verilog", "systemverilog" },
+			})
+
+			lspconfig.volar.setup({
+				cmd = { cmd("vue-language-server.cmd"), "--stdio" },
+				capabilities = capabilities,
+				on_attach = on_attach,
+				filetypes = { "vue" },
+				root_dir = util.root_pattern("package.json", "vue.config.js", "vite.config.js", ".git"),
+				single_file_support = true,
+				init_options = {
+					typescript = {
+						tsdk = vim.fn.expand("$HOME/.npm-global/node_modules/typescript/lib"),
+					},
+				},
 			})
 
 			-- =========================

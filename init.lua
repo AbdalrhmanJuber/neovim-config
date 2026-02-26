@@ -44,4 +44,4 @@ vim.api.nvim_create_autocmd("LspAttach", {
     vim.defer_fn(disable_all_underlines_except_diagnostics, 100)
   end,
 })
-vim.opt.shadafile = vim.fn.stdpath("data") .. "/shada/main_alt.shada"
+
